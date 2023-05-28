@@ -8,3 +8,10 @@ games/
 *~
 *#
 .local
+*~
+tramp
+eln-cache/
+projects
+.cache/
+.#*
+.*
