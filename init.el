@@ -32,29 +32,33 @@
 (fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
 (add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
 
-;; Initialize package sources
-(require 'package)
+(defvar bootstrap-version)
+(let ((bootstrap-file
+      (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+        "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+        'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
 
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
 
-(package-initialize)
-(unless package-archive-contents
- (package-refresh-contents))
-
-;; Initialize use-package on non-Linux platforms
-(unless (package-installed-p 'use-package)
-   (package-install 'use-package))
-
-(require 'use-package)
+(straight-use-package 'use-package)
+(setq straight-use-package-by-default t)
 
 (use-package doom-themes
-  :ensure t
+  :straight t
   :config
-   (setq doom-themes-enable-bold t   ; if nil, bold is universally disabled
-         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-   (load-theme 'doom-acario-dark t))
+   (setq doom-themes-enable-bold t)   ; if nil, bold is universally disabled
+   (setq     doom-themes-enable-italic t)) ; if nil, italics is universally disabled
+
+(use-package Tao
+ :straigt '(Tao :type git :host github :repo "11111000000/tao-theme-emacs"))
+
+(load-theme 'doom-dark+ t)
 
 (use-package nerd-icons
  :custom
@@ -65,23 +69,14 @@
 )
 
 (use-package all-the-icons
-:ensure t)
+:straight t)
 
-(use-package spaceline
-:ensure t)
-(use-package spaceline-config
-:ensure spaceline
-:config
-(spaceline-spacemacs-theme)
-(setq powerline-default-separator 'arrow))
-(use-package spaceline-all-the-icons
-:ensure t
-:after spaceline
-:config
-(spaceline-all-the-icons-theme))
-
+(use-package doom-modeline
+:straight t
+:init
+(doom-modeline-mode 1))
 (use-package dashboard
-:ensure t
+:straight t
 :config
 (setq dashboard-set-file-icons t)
 (setq dashboard-display-icons-p t)
@@ -91,14 +86,14 @@
 (setq org-html-validation-link nil)
 
 (use-package org
-  :ensure t
+  :straight t
   :config
   (org-mode 1))
 
 (setq org-log-into-drawer t);; Allows notes to be inserted into drawers
 
 (use-package org-bullets
-:ensure t
+:straight t
 :config
 (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 
@@ -108,7 +103,7 @@
 (setq org-startup-folded t)
 
 (use-package evil-org
-:ensure t
+:straight t
 :after (evil org)
 :config
 (add-hook 'org-mode-hook 'evil-org-mode)
@@ -117,6 +112,10 @@
             (evil-org-set-key-theme '(navigation insert textobjects additional calendar))))
 (require 'evil-org-agenda)
 (evil-org-agenda-set-keys))
+
+(use-package org-tempo
+:straight '(:type built-in))
+(add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
 
 ;;select languages for bable
 (org-babel-do-load-languages
@@ -134,15 +133,12 @@
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
 
-(use-package org-tempo)
-(add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
-
 (setq org-log-done t)
 (setq org-agenda-files '("~/Desktop/Org/Task.org"))
 (global-set-key (kbd "C-c a") 'org-agenda)
 
 (use-package evil
-      :ensure t
+      :straight t
       :init
     (setq evil-want-integration t)
     (setq evil-want-keybinding nil)
@@ -152,7 +148,7 @@
 
 (use-package evil-collection
 :after evil
-:ensure t
+:straight t
 :custom (evil-collection-setup-minibuffer t)
 (setq evil-collection-most-list '(dired))
 :init
@@ -167,13 +163,13 @@
 (define-key lisp-interaction-mode-map (kbd "C-c C-c") #'mp-elisp-mode-eval-buffer)
 
 (use-package vertico
-:ensure t
+:straight t
 :config
 (vertico-mode 1))
 
 (use-package marginalia
   :after vertico
-  :ensure t
+  :straight t
   :config
   (marginalia-mode 1))
 
@@ -182,17 +178,17 @@
 (savehist-mode))
 
 (use-package which-key
-  :ensure t 
+  :straight t 
   :config
 (which-key-mode))
 
 (use-package which-key
-  :ensure t 
+  :straight t 
   :config
 (which-key-mode))
 
 (use-package flycheck
-  :ensure t)
+  :straight t)
 
 (use-package corfu
  ;; Optional customizations
@@ -221,22 +217,32 @@
 (corfu-history-mode))
 
 (use-package company
-:ensure t
+:straight t
 :init
 (add-hook 'after-init-hook 'global-company-mode))
 
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :straight t
+  :config
+  (setq lsp-keymap-prefix "C-c l")
+  (lsp-enable-which-key-integration t))
+
 (use-package eglot
-  :ensure t
+  :straight t
   :hook
   ((rustic-mode-hook . eglot-ensure)))
 
 (use-package rustic
-:ensure t
+:straight t
 :config
 (setq lsp-rust-analyzer-completion-add-call-parenthesis nil))
 
+(use-package markdown-mode
+:straight '( :type built-in))
+
 (use-package treemacs
-  :ensure t
+  :straight t
   :defer t
   :init
   (with-eval-after-load 'winum
@@ -326,26 +332,26 @@
 
 (use-package treemacs-evil
   :after (treemacs evil)
-  :ensure t)
+  :straight t)
 
 (use-package treemacs-projectile
   :after (treemacs projectile)
-  :ensure t)
+  :straight t)
 
 (use-package treemacs-icons-dired
   :hook (dired-mode . treemacs-icons-dired-enable-once)
-  :ensure t)
+  :straight t)
 
 (use-package treemacs-magit
   :after (treemacs magit)
-  :ensure t)
+  :straight t)
 
 (use-package treemacs-persp ;;treemacs-perspective if you use perspective.el vs. persp-mode
   :after (treemacs persp-mode) ;;or perspective vs. persp-mode
-  :ensure t
+  :straight t
   :config (treemacs-set-scope-type 'Perspectives))
 
 (use-package treemacs-tab-bar ;;treemacs-tab-bar if you use tab-bar-mode
   :after (treemacs)
-  :ensure t
+  :straight t
   :config (treemacs-set-scope-type 'Tabs))

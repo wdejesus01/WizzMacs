@@ -38,36 +38,52 @@
   (fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
   (add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
 #+end_src
-** Packages
+** Package Management Via Straight.el
 #+begin_src emacs-lisp
-  ;; Initialize package sources
-(require 'package)
 
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+          "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+          'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
 
-(package-initialize)
-(unless package-archive-contents
- (package-refresh-contents))
 
-;; Initialize use-package on non-Linux platforms
-(unless (package-installed-p 'use-package)
-   (package-install 'use-package))
-
-(require 'use-package)
+  (straight-use-package 'use-package)
+  (setq straight-use-package-by-default t)
+  
 #+end_src
 * UI
 ** Themes
+*** Doom Themes
 #+begin_src emacs-lisp
-  
-(use-package doom-themes
-  :ensure t
-  :config
-   (setq doom-themes-enable-bold t   ; if nil, bold is universally disabled
-         doom-themes-enable-italic t) ; if nil, italics is universally disabled
-   (load-theme 'doom-acario-dark t))
 
+  (use-package doom-themes
+    :straight t
+    :config
+     (setq doom-themes-enable-bold t)   ; if nil, bold is universally disabled
+     (setq     doom-themes-enable-italic t)) ; if nil, italics is universally disabled
+  
+#+end_src
+*** Tao
+#+begin_src emacs-lisp
+  (use-package Tao
+   :straigt '(Tao :type git :host github :repo "11111000000/tao-theme-emacs"))
+#+end_src
+
+#+RESULTS:
+: t
+
+#+end_src
+*** Load-theme
+#+begin_src emacs-lisp
+  (load-theme 'doom-dark+ t)
 #+end_src
 ** Nerd-Icons
 #+begin_src emacs-lisp
@@ -82,29 +98,37 @@
 ** All The Icons
 #+begin_src emacs-lisp
   (use-package all-the-icons
-  :ensure t)
+  :straight t)(use-package bespoke-modeline
+  :straight (:type git :host github :repo "mclear-tools/bespoke-modeline") 
+  :init
+  ;; Set header line
+  (setq bespoke-modeline-position 'top)
+  ;; Set mode-line height
+  (setq bespoke-modeline-size 3)
+  ;; Show diff lines in mode-line
+  (setq bespoke-modeline-git-diff-mode-line t)
+  ;; Set mode-line cleaner
+  (setq bespoke-modeline-cleaner t)
+  ;; Use mode-line visual bell
+  (setq bespoke-modeline-visual-bell t)
+  ;; Set vc symbol
+  (setq  bespoke-modeline-vc-symbol "G:")
+  :config
+ 
 #+end_src
 ** Modeline
-*** Spaceline
+*** Nano
 #+begin_src emacs-lisp
-  (use-package spaceline
-  :ensure t)
-  (use-package spaceline-config
-  :ensure spaceline
-  :config
-  (spaceline-spacemacs-theme)
-  (setq powerline-default-separator 'arrow))
-  (use-package spaceline-all-the-icons
-  :ensure t
-  :after spaceline
-  :config
-  (spaceline-all-the-icons-theme))
+  (use-package doom-modeline
+  :straight t
+  :init
+  (doom-modeline-mode 1))
 #+end_src
 ** Dashboard
 #+begin_src emacs-lisp
 
   (use-package dashboard
-  :ensure t
+  :straight t
   :config
   (setq dashboard-set-file-icons t)
   (setq dashboard-display-icons-p t)
@@ -125,7 +149,7 @@
 #+begin_src emacs-lisp
 
 (use-package org
-  :ensure t
+  :straight t
   :config
   (org-mode 1))
 
@@ -138,7 +162,7 @@
 *** Org-Bullets
 #+begin_src emacs-lisp
   (use-package org-bullets
-  :ensure t
+  :straight t
   :config
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+end_src
@@ -153,11 +177,11 @@
 #+RESULTS:
 : t
 
-** untionality
+** Funtionality
 *** Evil-org
 #+BEGIN_SRC emacs-lisp
   (use-package evil-org
-  :ensure t
+  :straight t
   :after (evil org)
   :config
   (add-hook 'org-mode-hook 'evil-org-mode)
@@ -170,6 +194,13 @@
 
 #+RESULTS:
 : t
+*** Org-Tempo
+#+BEGIN_SRC emacs-lisp
+  (use-package org-tempo
+  :straight '(:type built-in))
+  (add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
+
+#+END_SRC
 *** Org-Babel
 **** Languages
 #+BEGIN_SRC emacs-lisp
@@ -199,14 +230,7 @@
 #+RESULTS:
 | (lambda nil (add-hook 'after-save-hook #'efs/org-babel-tangle-config)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes |
 
-*** Org-Tempo
-#+BEGIN_SRC emacs-lisp
-    (use-package org-tempo)
-    (add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
-
-#+END_SRC
-
-*** Org-Agenda
+*** Org-Agenda`
 #+begin_src emacs-lisp
   (setq org-log-done t)
   (setq org-agenda-files '("~/Desktop/Org/Task.org"))
@@ -217,7 +241,7 @@
 #+begin_src emacs-lisp
 
       (use-package evil
-        :ensure t
+        :straight t
         :init
       (setq evil-want-integration t)
       (setq evil-want-keybinding nil)
@@ -230,7 +254,7 @@
 #+begin_src emacs-lisp
   (use-package evil-collection
   :after evil
-  :ensure t
+  :straight t
   :custom (evil-collection-setup-minibuffer t)
   (setq evil-collection-most-list '(dired))
   :init
@@ -253,7 +277,7 @@
 #+begin_src emacs-lisp
   
   (use-package vertico
-  :ensure t
+  :straight t
   :config
   (vertico-mode 1))
 
@@ -263,7 +287,7 @@
   
 (use-package marginalia
   :after vertico
-  :ensure t
+  :straight t
   :config
   (marginalia-mode 1))
 
@@ -280,7 +304,7 @@
 #+begin_src emacs-lisp
 
     (use-package which-key
-    :ensure t 
+    :straight t 
     :config
   (which-key-mode))
 
@@ -289,7 +313,7 @@
 #+begin_src emacs-lisp
   
 (use-package which-key
-  :ensure t 
+  :straight t 
   :config
 (which-key-mode))
 
@@ -298,7 +322,7 @@
 #+begin_src emacs-lisp
   
   (use-package flycheck
-    :ensure t)
+    :straight t)
 
 #+end_src
 ** Corfu
@@ -334,31 +358,32 @@
 ** Company
 #+begin_src emacs-lisp
   (use-package company
-  :ensure t
+  :straight t
   :init
   (add-hook 'after-init-hook 'global-company-mode))
 #+end_src
-
 * Programming
 ** LSP
 *** LSP-Mode
 #+begin_src emacs-lisp
-  
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :ensure t
-  :config
-  (setq lsp-keymap-prefix "C-c l")
-  (lsp-enable-which-key-integration t)) 
 
-*** Eglot
-#+end_src
-#+begin_src emacs-lisp
+  (use-package lsp-mode
+    :commands (lsp lsp-deferred)
+    :straight t
+    :config
+    (setq lsp-keymap-prefix "C-c l")
+    (lsp-enable-which-key-integration t)) 
+  #+end_src
   
-(use-package eglot
-  :ensure t
-  :hook
-  ((rustic-mode-hook . eglot-ensure)))
+*** Eglot
+#+begin_src emacs-lisp
+
+  (use-package eglot
+    :straight t
+    :hook
+    ((rustic-mode-hook . eglot-ensure)))
+ 
+
 
 #+end_src
 ** Languages
@@ -366,15 +391,20 @@
 #+begin_src emacs-lisp
 
   (use-package rustic
-  :ensure t
+  :straight t
   :config
   (setq lsp-rust-analyzer-completion-add-call-parenthesis nil))
 
 #+end_src
+*** Markdown
+#+begin_src emacs-lisp
+  (use-package markdown-mode
+  :straight '( :type built-in))
+#+end_src
 ** Treemacs
 #+begin_src emacs-lisp
     (use-package treemacs
-    :ensure t
+    :straight t
     :defer t
     :init
     (with-eval-after-load 'winum
@@ -464,27 +494,27 @@
 
   (use-package treemacs-evil
     :after (treemacs evil)
-    :ensure t)
+    :straight t)
 
   (use-package treemacs-projectile
     :after (treemacs projectile)
-    :ensure t)
+    :straight t)
 
   (use-package treemacs-icons-dired
     :hook (dired-mode . treemacs-icons-dired-enable-once)
-    :ensure t)
+    :straight t)
 
   (use-package treemacs-magit
     :after (treemacs magit)
-    :ensure t)
+    :straight t)
 
   (use-package treemacs-persp ;;treemacs-perspective if you use perspective.el vs. persp-mode
     :after (treemacs persp-mode) ;;or perspective vs. persp-mode
-    :ensure t
+    :straight t
     :config (treemacs-set-scope-type 'Perspectives))
 
   (use-package treemacs-tab-bar ;;treemacs-tab-bar if you use tab-bar-mode
     :after (treemacs)
-    :ensure t
+    :straight t
     :config (treemacs-set-scope-type 'Tabs))
 #+end_src
