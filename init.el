@@ -2,7 +2,7 @@
 
 (tool-bar-mode -1);Determins if tool bar shows up
 (scroll-bar-mode -1)
-(menu-bar-mode 1)
+(menu-bar-mode -1)
 
 (global-display-line-numbers-mode 1);Activates number lines
 (setq display-line-numbers-type 'relative);Number lines are relative to the current line
@@ -32,6 +32,12 @@
 (fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
 (add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
 
+(defun sudo-find-file (file-name)
+  "Like find file, but opens the file as root."
+  (interactive "FSudo Find File: ")
+  (let ((tramp-file-name (concat "/sudo::" (expand-file-name file-name))))
+    (find-file tramp-file-name)))
+
 (defvar bootstrap-version)
 (let ((bootstrap-file
       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -49,6 +55,9 @@
 (straight-use-package 'use-package)
 (setq straight-use-package-by-default t)
 
+(use-package no-littering
+:straight t)
+
 (use-package doom-themes
   :straight t
   :config
@@ -56,7 +65,7 @@
    (setq     doom-themes-enable-italic t)) ; if nil, italics is universally disabled
 
 (use-package Tao
- :straigt '(Tao :type git :host github :repo "11111000000/tao-theme-emacs"))
+ :straight '(Tao :type git :host github :repo "11111000000/tao-theme-emacs"))
 
 (load-theme 'doom-dark+ t)
 
@@ -69,12 +78,28 @@
 )
 
 (use-package all-the-icons
-:straight t)
+  :straight t)
+(use-package bespoke-modeline
+  :straight (:type git :host github :repo "mclear-tools/bespoke-modeline") 
+  :init
+  ;; Set header line
+  (setq bespoke-modeline-position 'top)
+  ;; Set mode-line height
+  (setq bespoke-modeline-size 3)
+  ;; Show diff lines in mode-line
+  (setq bespoke-modeline-git-diff-mode-line t)
+  ;; Set mode-line cleaner
+  (setq bespoke-modeline-cleaner t)
+  ;; Use mode-line visual bell
+  (setq bespoke-modeline-visual-bell t)
+  ;; Set vc symbol
+  (setq  bespoke-modeline-vc-symbol "G:"))
 
 (use-package doom-modeline
 :straight t
 :init
 (doom-modeline-mode 1))
+
 (use-package dashboard
 :straight t
 :config
@@ -88,7 +113,7 @@
 (use-package org
   :straight t
   :config
-  (org-mode 1))
+  (org-mode))
 
 (setq org-log-into-drawer t);; Allows notes to be inserted into drawers
 
@@ -101,17 +126,6 @@
 (setq org-startup-indented t)
 (setq org-startup-inline-images t)
 (setq org-startup-folded t)
-
-(use-package evil-org
-:straight t
-:after (evil org)
-:config
-(add-hook 'org-mode-hook 'evil-org-mode)
-(add-hook 'evil-org-mode-hook
-          (lambda ()
-            (evil-org-set-key-theme '(navigation insert textobjects additional calendar))))
-(require 'evil-org-agenda)
-(evil-org-agenda-set-keys))
 
 (use-package org-tempo
 :straight '(:type built-in))
@@ -134,7 +148,6 @@
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
 
 (setq org-log-done t)
-(setq org-agenda-files '("~/Desktop/Org/Task.org"))
 (global-set-key (kbd "C-c a") 'org-agenda)
 
 (use-package evil
@@ -144,6 +157,7 @@
     (setq evil-want-keybinding nil)
     :config
 (define-key evil-insert-state-map (kbd "C-c") 'evil-normal-state)
+(evil-set-initial-state 'help-mode 'emacs)
       (evil-mode 1))
 
 (use-package evil-collection
@@ -153,6 +167,10 @@
 (setq evil-collection-most-list '(dired))
 :init
 (evil-collection-init))
+
+(use-package god-mode
+:straight t
+(god-mode))
 
 (defun mp-elisp-mode-eval-buffer ()
   (interactive)
@@ -182,10 +200,11 @@
   :config
 (which-key-mode))
 
-(use-package which-key
-  :straight t 
-  :config
-(which-key-mode))
+(use-package orderless
+:straight t
+:custom
+(completion-styles '(orderless basic))
+(completion-category-overrides '((file (styles basic partial-completion)))))
 
 (use-package flycheck
   :straight t)
@@ -240,6 +259,10 @@
 
 (use-package markdown-mode
 :straight '( :type built-in))
+
+(use-package nix-mode
+:straight t
+:mode "\\.nix\\'")
 
 (use-package treemacs
   :straight t

@@ -8,7 +8,7 @@
 
   (tool-bar-mode -1);Determins if tool bar shows up
   (scroll-bar-mode -1)
-  (menu-bar-mode 1)
+  (menu-bar-mode -1)
 
   (global-display-line-numbers-mode 1);Activates number lines
   (setq display-line-numbers-type 'relative);Number lines are relative to the current line
@@ -38,9 +38,17 @@
   (fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
   (add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
 #+end_src
+*** Find Sudo-File
+#+begin_src emacs-lisp
+(defun sudo-find-file (file-name)
+  "Like find file, but opens the file as root."
+  (interactive "FSudo Find File: ")
+  (let ((tramp-file-name (concat "/sudo::" (expand-file-name file-name))))
+    (find-file tramp-file-name)))
+#+end_src
 ** Package Management Via Straight.el
 #+begin_src emacs-lisp
-
+  
   (defvar bootstrap-version)
   (let ((bootstrap-file
         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -57,8 +65,13 @@
 
   (straight-use-package 'use-package)
   (setq straight-use-package-by-default t)
-  
 #+end_src
+** No-Littering
+#+begin_src emacs-lisp
+  (use-package no-littering
+  :straight t)
+#+end_src
+
 * UI
 ** Themes
 *** Doom Themes
@@ -74,7 +87,7 @@
 *** Tao
 #+begin_src emacs-lisp
   (use-package Tao
-   :straigt '(Tao :type git :host github :repo "11111000000/tao-theme-emacs"))
+   :straight '(Tao :type git :host github :repo "11111000000/tao-theme-emacs"))
 #+end_src
 
 #+RESULTS:
@@ -97,23 +110,23 @@
 #+end_src
 ** All The Icons
 #+begin_src emacs-lisp
-  (use-package all-the-icons
-  :straight t)(use-package bespoke-modeline
-  :straight (:type git :host github :repo "mclear-tools/bespoke-modeline") 
-  :init
-  ;; Set header line
-  (setq bespoke-modeline-position 'top)
-  ;; Set mode-line height
-  (setq bespoke-modeline-size 3)
-  ;; Show diff lines in mode-line
-  (setq bespoke-modeline-git-diff-mode-line t)
-  ;; Set mode-line cleaner
-  (setq bespoke-modeline-cleaner t)
-  ;; Use mode-line visual bell
-  (setq bespoke-modeline-visual-bell t)
-  ;; Set vc symbol
-  (setq  bespoke-modeline-vc-symbol "G:")
-  :config
+    (use-package all-the-icons
+    :straight t)
+  (use-package bespoke-modeline
+    :straight (:type git :host github :repo "mclear-tools/bespoke-modeline") 
+    :init
+    ;; Set header line
+    (setq bespoke-modeline-position 'top)
+    ;; Set mode-line height
+    (setq bespoke-modeline-size 3)
+    ;; Show diff lines in mode-line
+    (setq bespoke-modeline-git-diff-mode-line t)
+    ;; Set mode-line cleaner
+    (setq bespoke-modeline-cleaner t)
+    ;; Use mode-line visual bell
+    (setq bespoke-modeline-visual-bell t)
+    ;; Set vc symbol
+    (setq  bespoke-modeline-vc-symbol "G:"))
  
 #+end_src
 ** Modeline
@@ -151,7 +164,7 @@
 (use-package org
   :straight t
   :config
-  (org-mode 1))
+  (org-mode))
 
 #+end_src
 *** Org-Drawers
@@ -178,22 +191,6 @@
 : t
 
 ** Funtionality
-*** Evil-org
-#+BEGIN_SRC emacs-lisp
-  (use-package evil-org
-  :straight t
-  :after (evil org)
-  :config
-  (add-hook 'org-mode-hook 'evil-org-mode)
-  (add-hook 'evil-org-mode-hook
-            (lambda ()
-              (evil-org-set-key-theme '(navigation insert textobjects additional calendar))))
-  (require 'evil-org-agenda)
-  (evil-org-agenda-set-keys))
-#+END_SRC
-
-#+RESULTS:
-: t
 *** Org-Tempo
 #+BEGIN_SRC emacs-lisp
   (use-package org-tempo
@@ -233,7 +230,6 @@
 *** Org-Agenda`
 #+begin_src emacs-lisp
   (setq org-log-done t)
-  (setq org-agenda-files '("~/Desktop/Org/Task.org"))
   (global-set-key (kbd "C-c a") 'org-agenda)
 #+end_src
 * Key-Bindings
@@ -247,6 +243,7 @@
       (setq evil-want-keybinding nil)
       :config
   (define-key evil-insert-state-map (kbd "C-c") 'evil-normal-state)
+  (evil-set-initial-state 'help-mode 'emacs)
         (evil-mode 1))
 
 #+end_src
@@ -260,6 +257,13 @@
   :init
   (evil-collection-init))
 #+end_src
+** God-mode
+#+begin_src emacs-lisp
+  (use-package god-mode
+  :straight t
+  (god-mode))
+#+end_src
+
 ** Lisp/Elisp
 #+begin_src emacs-lisp
   (defun mp-elisp-mode-eval-buffer ()
@@ -311,11 +315,11 @@
 #+end_src
 ** Orderless
 #+begin_src emacs-lisp
-  
-(use-package which-key
-  :straight t 
-  :config
-(which-key-mode))
+  (use-package orderless
+  :straight t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
 
 #+end_src
 ** Flycheck
@@ -382,9 +386,6 @@
     :straight t
     :hook
     ((rustic-mode-hook . eglot-ensure)))
- 
-
-
 #+end_src
 ** Languages
 *** Rust
@@ -400,6 +401,12 @@
 #+begin_src emacs-lisp
   (use-package markdown-mode
   :straight '( :type built-in))
+#+end_src
+*** Nix
+#+begin_src emacs-lisp
+  (use-package nix-mode
+  :straight t
+  :mode "\\.nix\\'")
 #+end_src
 ** Treemacs
 #+begin_src emacs-lisp
