@@ -57,6 +57,12 @@
 
 (use-package no-littering
 :straight t)
+(no-littering-theme-backups)
+
+(use-package exec-path-from-shell
+  :straight t)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
 
 (use-package doom-themes
   :straight t
@@ -70,20 +76,27 @@
 (load-theme 'doom-dark+ t)
 
 (use-package nerd-icons
- :custom
-;; The Nerd Font you want to use in GUI
-;; "Symbols Nerd Font Mono" is the default and is recommended
-;; but you can use any other Nerd Font if you want
- (nerd-icons-font-family "Symbols Nerd Font Mono")
+        :straight t
+      :custom
+  (nerd-icons-font-family "3270 Nerd Font")
 )
+        ;; The Nerd Font you want to use in GUI
+        ;; "Symbols Nerd Font Mono" is the default and is recommended
+        ;; but you can use any other Nerd Font if you want
 
 (use-package all-the-icons
-  :straight t)
+:straight t)
+
+(use-package doom-modeline
+:straight t
+:init
+)
+
 (use-package bespoke-modeline
   :straight (:type git :host github :repo "mclear-tools/bespoke-modeline") 
   :init
   ;; Set header line
-  (setq bespoke-modeline-position 'top)
+  (setq bespoke-modeline-position 'bottom)
   ;; Set mode-line height
   (setq bespoke-modeline-size 3)
   ;; Show diff lines in mode-line
@@ -93,12 +106,8 @@
   ;; Use mode-line visual bell
   (setq bespoke-modeline-visual-bell t)
   ;; Set vc symbol
-  (setq  bespoke-modeline-vc-symbol "G:"))
-
-(use-package doom-modeline
-:straight t
-:init
-(doom-modeline-mode 1))
+  (setq  bespoke-modeline-vc-symbol "G:")
+  (bespoke-modeline-mode))
 
 (use-package dashboard
 :straight t
@@ -117,6 +126,17 @@
 
 (setq org-log-into-drawer t);; Allows notes to be inserted into drawers
 
+(add-hook 'org-mode-hook 'flyspell-mode)
+
+(setq org-enforce-todo-dependencies 1)
+
+(setq org-todo-keywords
+      '((sequence "READING(r)" "REFERENCE(R)" "|" "HIATUS(h)" "DONE(d)") 
+        (sequence "TODO" "|" "DONE" "CANCELLED" "POSTPONED")))
+
+(setq org-todo-keyword-faces
+      '(("REFERENCE" . "red")))
+
 (use-package org-bullets
 :straight t
 :config
@@ -132,11 +152,13 @@
 (add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
 
 ;;select languages for bable
-(org-babel-do-load-languages
-'org-babel-load-languages
-'((emacs-lisp . t)))
+  (org-babel-do-load-languages
+  'org-babel-load-languages
+  '((emacs-lisp . t)
+(C . t)))
 
-(setq org-confirm-babel-evaluate nil);;Confirmation to execute code block
+
+  (setq org-confirm-babel-evaluate nil);;Confirmation to execute code block
 
 (defun efs/org-babel-tangle-config()
 (when(string-equal (buffer-file-name)
@@ -151,22 +173,21 @@
 (global-set-key (kbd "C-c a") 'org-agenda)
 
 (use-package evil
-      :straight t
-      :init
-    (setq evil-want-integration t)
-    (setq evil-want-keybinding nil)
-    :config
+  :straight t
+  :init
+(setq evil-want-integration t)
+(setq evil-want-keybinding nil)
+:config
 (define-key evil-insert-state-map (kbd "C-c") 'evil-normal-state)
-(evil-set-initial-state 'help-mode 'emacs)
-      (evil-mode 1))
+(evil-mode 1))
 
 (use-package evil-collection
 :after evil
-:straight t
-:custom (evil-collection-setup-minibuffer t)
-(setq evil-collection-most-list '(dired))
-:init
-(evil-collection-init))
+:ensure t
+:config
+(evil-collection-init ))
+
+(evil-set-initial-state 'Info-mode 'emacs)
 
 (use-package god-mode
 :straight t
@@ -208,6 +229,7 @@
 
 (use-package flycheck
   :straight t)
+(global-flycheck-mode)
 
 (use-package corfu
  ;; Optional customizations
@@ -237,32 +259,20 @@
 
 (use-package company
 :straight t
-:init
+:hook
 (add-hook 'after-init-hook 'global-company-mode))
 
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :straight t
-  :config
-  (setq lsp-keymap-prefix "C-c l")
-  (lsp-enable-which-key-integration t))
-
-(use-package eglot
-  :straight t
-  :hook
-  ((rustic-mode-hook . eglot-ensure)))
+(require 'eglot)
 
 (use-package rustic
-:straight t
-:config
-(setq lsp-rust-analyzer-completion-add-call-parenthesis nil))
+  :straight t
+  :config
+  (setq lsp-rust-analyzer-completion-add-call-parenthesis nil)
+  (setq rustic-lsp-client 'eglot))
 
-(use-package markdown-mode
-:straight '( :type built-in))
-
-(use-package nix-mode
-:straight t
-:mode "\\.nix\\'")
+(use-package shfmt
+:straight t)
+(add-hook 'sh-mode-hook 'shfmt-on-save-mode)
 
 (use-package treemacs
   :straight t
@@ -378,3 +388,12 @@
   :after (treemacs)
   :straight t
   :config (treemacs-set-scope-type 'Tabs))
+
+(use-package nov.el
+  :straight t)
+(use-package nov
+  :straight t)
+(add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+
+(use-package vterm
+  :straight t)
