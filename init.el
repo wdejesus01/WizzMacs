@@ -1,36 +1,39 @@
-(setq inhibit-startup-message t) ; Removes starting page
+(toggle-frame-fullscreen)
+    (setq inhibit-startup-message t) ; Removes starting page
 
-(tool-bar-mode -1);Determins if tool bar shows up
-(scroll-bar-mode -1)
-(menu-bar-mode -1)
+  (tool-bar-mode -1);Determins if tool bar shows up
+  (scroll-bar-mode -1)
+  (menu-bar-mode -1)
 
-(global-display-line-numbers-mode 1);Activates number lines
-(setq display-line-numbers-type 'relative);Number lines are relative to the current line
+  (global-display-line-numbers-mode 1);Activates number lines
+  (setq display-line-numbers-type 'relative);Number lines are relative to the current line
 
-(recentf-mode 1); loads recent files that you have edited
+  (recentf-mode 1); loads recent files that you have edited
 
-(setq history-length 20) ;Sets the amount of recent files tracked
+  (setq history-length 20) ;Sets the amount of recent files tracked
 
-(save-place-mode 1) ; Saves and restores last location of file
+  (save-place-mode 1) ; Saves and restores last location of file
 
-;; Moves custom variables to a seprate file and loads it
-;; custom-file determines where custom variables are stored
-;; locate-user-emacs-file Resolves path within the init.el directory
-(setq custom-file (locate-user-emacs-file "custom-vars.el"));
+  ;; Moves custom variables to a seprate file and loads it
+  ;; custom-file determines where custom variables are stored
+  ;; locate-user-emacs-file Resolves path within the init.el directory
+  (setq custom-file (locate-user-emacs-file "custom-vars.el"));
 
-;; Loads the custom file
-;; Don't throw errors or put messages in minibuffer if errors occurs
-(load custom-file 'noerror 'nomessage)
+  ;; Loads the custom file
+  ;; Don't throw errors or put messages in minibuffer if errors occurs
+  (load custom-file 'noerror 'nomessage)
 
-(setq use-dialog-box nil);Turns off graphical dialog box(less mouse clickey)
+  (setq use-dialog-box nil);Turns off graphical dialog box(less mouse clickey)
 
-(global-auto-revert-mode 1);If file has changed, auto loads changes
-(setq global-auto-revert-non-file-buffers t);;Same as above but for all buffers
+  (global-auto-revert-mode 1);If file has changed, auto loads changes
+  (setq global-auto-revert-non-file-buffers t);;Same as above but for all buffers
 
-(global-hl-line-mode 1)
+  (global-hl-line-mode 1)
 
-(fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
-(add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
+  (fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
+  (add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
+
+  (add-to-list 'default-frame-alist '(undecorated . t))
 
 (defun sudo-find-file (file-name)
   "Like find file, but opens the file as root."
@@ -59,6 +62,9 @@
 :straight t)
 (no-littering-theme-backups)
 
+(keymap-global-set "C-x 5 w" 'set-frame-width)
+(keymap-global-set "C-x 5 h" 'set-frame-height)
+
 (use-package exec-path-from-shell
   :straight t)
 (when (memq window-system '(mac ns x))
@@ -70,44 +76,22 @@
    (setq doom-themes-enable-bold t)   ; if nil, bold is universally disabled
    (setq     doom-themes-enable-italic t)) ; if nil, italics is universally disabled
 
-(use-package Tao
- :straight '(Tao :type git :host github :repo "11111000000/tao-theme-emacs"))
+(use-package tao-theme
+ :straight '(tao-theme :type git :flavor melpa :host github :repo "11111000000/tao-theme-emacs"))
 
 (load-theme 'doom-dark+ t)
 
 (use-package nerd-icons
-        :straight t
-      :custom
-  (nerd-icons-font-family "3270 Nerd Font")
-)
-        ;; The Nerd Font you want to use in GUI
-        ;; "Symbols Nerd Font Mono" is the default and is recommended
-        ;; but you can use any other Nerd Font if you want
+  :straight t
+  ;; :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  ;;   (nerd-icons-font-family "Symbols Nerd Font Mono")
+  )
 
 (use-package all-the-icons
 :straight t)
-
-(use-package doom-modeline
-:straight t
-:init
-)
-
-(use-package bespoke-modeline
-  :straight (:type git :host github :repo "mclear-tools/bespoke-modeline") 
-  :init
-  ;; Set header line
-  (setq bespoke-modeline-position 'bottom)
-  ;; Set mode-line height
-  (setq bespoke-modeline-size 3)
-  ;; Show diff lines in mode-line
-  (setq bespoke-modeline-git-diff-mode-line t)
-  ;; Set mode-line cleaner
-  (setq bespoke-modeline-cleaner t)
-  ;; Use mode-line visual bell
-  (setq bespoke-modeline-visual-bell t)
-  ;; Set vc symbol
-  (setq  bespoke-modeline-vc-symbol "G:")
-  (bespoke-modeline-mode))
 
 (use-package dashboard
 :straight t
@@ -117,12 +101,12 @@
 (setq dashboard-icon-type 'all-the-icons))
 (dashboard-setup-startup-hook)
 
-(setq org-html-validation-link nil)
-
 (use-package org
   :straight t
   :config
   (org-mode))
+
+(setq org-html-validation-link nil)
 
 (setq org-log-into-drawer t);; Allows notes to be inserted into drawers
 
@@ -131,7 +115,7 @@
 (setq org-enforce-todo-dependencies 1)
 
 (setq org-todo-keywords
-      '((sequence "READING(r)" "REFERENCE(R)" "|" "HIATUS(h)" "DONE(d)") 
+      '((sequence "READING(r)" "REFERENCE(R)" "|" "HIATUS(h)" "READ(d@)") 
         (sequence "TODO" "|" "DONE" "CANCELLED" "POSTPONED")))
 
 (setq org-todo-keyword-faces
@@ -152,13 +136,16 @@
 (add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
 
 ;;select languages for bable
-  (org-babel-do-load-languages
-  'org-babel-load-languages
-  '((emacs-lisp . t)
-(C . t)))
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (C . t)
+   (python . t)))
+   
 
 
-  (setq org-confirm-babel-evaluate nil);;Confirmation to execute code block
+(setq org-confirm-babel-evaluate nil);;Confirmation to execute code block
+(setq org-babel-python--command "python3")
 
 (defun efs/org-babel-tangle-config()
 (when(string-equal (buffer-file-name)
@@ -188,10 +175,6 @@
 (evil-collection-init ))
 
 (evil-set-initial-state 'Info-mode 'emacs)
-
-(use-package god-mode
-:straight t
-(god-mode))
 
 (defun mp-elisp-mode-eval-buffer ()
   (interactive)
@@ -388,12 +371,6 @@
   :after (treemacs)
   :straight t
   :config (treemacs-set-scope-type 'Tabs))
-
-(use-package nov.el
-  :straight t)
-(use-package nov
-  :straight t)
-(add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
 
 (use-package vterm
   :straight t)
