@@ -1,15 +1,15 @@
-#+TITLE:Welcome to the wonderful world of wizadry
+:#+STARTUP: overview
+#+TITLE:Welcome to the wonderful world of wizardry
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el
 #+SEQ_TODO: UPDATE N/A MAINTENANCE
 * General Setting
 ** User-Settings
 #+begin_src emacs-lisp
-  (toggle-frame-fullscreen)
       (setq inhibit-startup-message t) ; Removes starting page
 
-    (tool-bar-mode -1);Determins if tool bar shows up
-    (scroll-bar-mode -1)
-    (menu-bar-mode -1)
+    (tool-bar-mode nil) ; if tool bar shows up
+    (scroll-bar-mode nil)
+    (menu-bar-mode nil)
 
     (global-display-line-numbers-mode 1);Activates number lines
     (setq display-line-numbers-type 'relative);Number lines are relative to the current line
@@ -87,34 +87,41 @@
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize))
 #+end_src
+** Buffers
+#+begin_src emacs-lisp
+  (keymap-global-set "C-x C-b" 'buffer-menu)
+  (add-to-list 'global-auto-revert-ignore-modes 'Buffer-menu-mode)
+#+end_src
+
+#+RESULTS:
+| Buffer-menu-mode |
+** Registers
+*** Bookmarks
+#+begin_src emacs-lisp
+  ;; Save bookmark list after every modifiction
+  (setq bookmark-save-flag 1)
+#+end_src
+
+#+RESULTS:
+: 1
 
 * UI
 ** Themes
 *** Doom Themes
 #+begin_src emacs-lisp
-
   (use-package doom-themes
     :straight t
     :config
-     (setq doom-themes-enable-bold t)   ; if nil, bold is universally disabled
-     (setq     doom-themes-enable-italic t)) ; if nil, italics is universally disabled
-  
-#+end_src
-*** Tao
-#+begin_src emacs-lisp
-(use-package tao-theme
- :straight '(tao-theme :type git :flavor melpa :host github :repo "11111000000/tao-theme-emacs"))
+    (setq doom-themes-enable-bold t   ; if nil, bold is universally disabled
+  	doom-themes-enable-italic t)
+    (load-theme 'doom-henna t)) ; if nil, italics is universally disabled
+
 
 #+end_src
 
 #+RESULTS:
 : t
 
-#+end_src
-*** Load-theme
-#+begin_src emacs-lisp
-  (load-theme 'doom-dark+ t)
-#+end_src
 ** Nerd-Icons
 #+begin_src emacs-lisp
   (use-package nerd-icons
@@ -147,9 +154,10 @@
 #+RESULTS:
 : ts
 
-* Org-Mode
-** Org-Config
-*** org-packagae
+* Documents
+** Org-Mode
+*** Org-Config
+**** org-packagae
 #+begin_src emacs-lisp
 (use-package org
   :straight t
@@ -161,44 +169,52 @@
 #+RESULTS:
 : t
 
-*** Settings
+**** Settings
 #+begin_src emacs-lisp
-  (setq org-html-validation-link nil)
+    (setq org-html-validation-link nil)
+    (setq org-hide-emphasis-markers t)
+    (setq org-clock-sound "~/android.webm")
+  (defun my/play-sound (orgin-fn sound)
+    (cl-destructuring-bind (_ _ file) sound
+      (make-process :name (concat "play-sound-" file)
+                    :connection-type 'pipe
+                    :command `("mpv" ,file))))
+  (advice-add 'play-sound :around 'my/play-sound)
 #+end_src
-*** Org-Drawers
+
+#+RESULTS:
+
+**** Org-Drawers
 #+begin_src emacs-lisp
  (setq org-log-into-drawer t);; Allows notes to be inserted into drawers 
 #+End_src
-*** Spell Check
+**** Spell Check
 #+begin_src emacs-lisp
   (add-hook 'org-mode-hook 'flyspell-mode)
 #+end_src
-*** TODO
+**** TODO
 #+begin_src emacs-lisp
 
   (setq org-enforce-todo-dependencies 1)
 
   (setq org-todo-keywords
-        '((sequence "READING(r)" "REFERENCE(R)" "|" "HIATUS(h)" "READ(d@)") 
+        '((sequence  "|" "HIATUS(h)" "READ(d@)") 
           (sequence "TODO" "|" "DONE" "CANCELLED" "POSTPONED")))
-
-  (setq org-todo-keyword-faces
-        '(("REFERENCE" . "red")))
 
 #+end_src
 
 #+RESULTS:
 : ((REFERENCE . red))
 
-** Appearence
-*** Org-Bullets
+*** Appearence
+**** Org-Bullets
 #+begin_src emacs-lisp
   (use-package org-bullets
   :straight t
   :config
   (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
 #+end_src
-*** org-Settings
+**** org-Settings
 #+BEGIN_SRC emacs-lisp
   (setq org-hidden-keywords '(title))
   (setq org-startup-indented t)
@@ -209,16 +225,16 @@
 #+RESULTS:
 : t
 
-** Funtionality
-*** Org-Tempo
+*** Funtionality
+**** Org-Tempo
 #+BEGIN_SRC emacs-lisp
   (use-package org-tempo
   :straight '(:type built-in))
   (add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
 
 #+END_SRC
-*** Org-Babel
-**** Languages
+**** Org-Babel
+***** Languages
 #+BEGIN_SRC emacs-lisp
       ;;select languages for bable
     (org-babel-do-load-languages
@@ -236,7 +252,7 @@
 
 #+RESULTS:
 
-**** Tangle
+***** Tangle
 #+BEGIN_SRC emacs-lisp
   (defun efs/org-babel-tangle-config()
   (when(string-equal (buffer-file-name)
@@ -252,10 +268,42 @@
 #+RESULTS:
 | (lambda nil (add-hook 'after-save-hook #'efs/org-babel-tangle-config)) | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes |
 
-*** Org-Agenda`
+**** Org-Agenda`
 #+begin_src emacs-lisp
   (setq org-log-done t)
   (global-set-key (kbd "C-c a") 'org-agenda)
+#+end_src
+
+**** Org-Pomodoro
+#+begin_src emacs-lisp
+  (use-package org-pomodoro
+    :straight t
+    :bind (("C-c C-x k" . org-pomodoro))
+    :config
+    (defun long-time ()
+      "Pomodoro timing for the home"
+      (interactive)
+      (setq org-pomodoro-length 50
+  	  org-pomdoro-short-break-length 10
+  	  org-pomodoro-long-break-length 30
+  	  org-pomdoro-long-break-frequency 2))
+    (defun short-time ()
+      "Pomodoro for short time"
+      (interactive)
+      (setq oorg-pomodoro-length 25
+  	  org-pomdoro-short-break-length 5
+  	  org-pomodoro-long-break-length 30
+  	  org-pomdoro-long-break-frequency 4)))
+#+end_src
+
+#+RESULTS:
+: org-pomodoro
+
+** Latex
+*** Auctex 
+#+begin_src emacs-lisp
+  (use-package auctex
+  :straight t)
 #+end_src
 * Key-Bindings
 ** Evil
@@ -263,11 +311,12 @@
   (use-package evil
     :straight t
     :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil)
-  :config
-  (define-key evil-insert-state-map (kbd "C-c") 'evil-normal-state)
-  (evil-mode 1))
+    (setq evil-want-integration t
+  	evil-want-keybinding nil)
+    :config
+    (setq	evil-undo-system 'undo-redo)
+    (keymap-set evil-insert-state-map "C-c" 'evil-normal-state)
+    (evil-mode 1))
 
 #+end_src
 
@@ -277,23 +326,24 @@
 #+begin_src emacs-lisp
   (use-package evil-collection
   :after evil
-  :ensure t
+  :straight t
   :config
   (evil-collection-init ))
 #+end_src
-** Evil-Initialization
-#+begin_src emacs-lisp
-  (evil-set-initial-state 'Info-mode 'emacs)
-#+end_src
+
+#+RESULTS:
+: t
+
 ** Lisp/Elisp
 #+begin_src emacs-lisp
-  (defun mp-elisp-mode-eval-buffer ()
-  (interactive)
-  (message "Evaluated buffer")
-  (eval-buffer))
+  
+    (defun mp-elisp-mode-eval-buffer ()
+    (interactive)
+    (message "Evaluated buffer")
+    (eval-buffer))
 
-(define-key emacs-lisp-mode-map (kbd "C-c C-c") #'mp-elisp-mode-eval-buffer)
-(define-key lisp-interaction-mode-map (kbd "C-c C-c") #'mp-elisp-mode-eval-buffer)
+  (define-key emacs-lisp-mode-map (kbd "C-c C-c") #'mp-elisp-mode-eval-buffer)
+  (define-key lisp-interaction-mode-map (kbd "C-c C-c") #'mp-elisp-mode-eval-buffer)
 #+end_src
 * Completion
 ** Vertico

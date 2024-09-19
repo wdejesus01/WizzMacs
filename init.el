@@ -1,39 +1,38 @@
-(toggle-frame-fullscreen)
-    (setq inhibit-startup-message t) ; Removes starting page
+(setq inhibit-startup-message t) ; Removes starting page
 
-  (tool-bar-mode -1);Determins if tool bar shows up
-  (scroll-bar-mode -1)
-  (menu-bar-mode -1)
+(tool-bar-mode nil) ; if tool bar shows up
+(scroll-bar-mode nil)
+(menu-bar-mode nil)
 
-  (global-display-line-numbers-mode 1);Activates number lines
-  (setq display-line-numbers-type 'relative);Number lines are relative to the current line
+(global-display-line-numbers-mode 1);Activates number lines
+(setq display-line-numbers-type 'relative);Number lines are relative to the current line
 
-  (recentf-mode 1); loads recent files that you have edited
+(recentf-mode 1); loads recent files that you have edited
 
-  (setq history-length 20) ;Sets the amount of recent files tracked
+(setq history-length 20) ;Sets the amount of recent files tracked
 
-  (save-place-mode 1) ; Saves and restores last location of file
+(save-place-mode 1) ; Saves and restores last location of file
 
-  ;; Moves custom variables to a seprate file and loads it
-  ;; custom-file determines where custom variables are stored
-  ;; locate-user-emacs-file Resolves path within the init.el directory
-  (setq custom-file (locate-user-emacs-file "custom-vars.el"));
+;; Moves custom variables to a seprate file and loads it
+;; custom-file determines where custom variables are stored
+;; locate-user-emacs-file Resolves path within the init.el directory
+(setq custom-file (locate-user-emacs-file "custom-vars.el"));
 
-  ;; Loads the custom file
-  ;; Don't throw errors or put messages in minibuffer if errors occurs
-  (load custom-file 'noerror 'nomessage)
+;; Loads the custom file
+;; Don't throw errors or put messages in minibuffer if errors occurs
+(load custom-file 'noerror 'nomessage)
 
-  (setq use-dialog-box nil);Turns off graphical dialog box(less mouse clickey)
+(setq use-dialog-box nil);Turns off graphical dialog box(less mouse clickey)
 
-  (global-auto-revert-mode 1);If file has changed, auto loads changes
-  (setq global-auto-revert-non-file-buffers t);;Same as above but for all buffers
+(global-auto-revert-mode 1);If file has changed, auto loads changes
+(setq global-auto-revert-non-file-buffers t);;Same as above but for all buffers
 
-  (global-hl-line-mode 1)
+(global-hl-line-mode 1)
 
-  (fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
-  (add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
+(fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
+(add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
 
-  (add-to-list 'default-frame-alist '(undecorated . t))
+(add-to-list 'default-frame-alist '(undecorated . t))
 
 (defun sudo-find-file (file-name)
   "Like find file, but opens the file as root."
@@ -70,16 +69,18 @@
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 
+(keymap-global-set "C-x C-b" 'buffer-menu)
+(add-to-list 'global-auto-revert-ignore-modes 'Buffer-menu-mode)
+
+;; Save bookmark list after every modifiction
+(setq bookmark-save-flag 1)
+
 (use-package doom-themes
   :straight t
   :config
-   (setq doom-themes-enable-bold t)   ; if nil, bold is universally disabled
-   (setq     doom-themes-enable-italic t)) ; if nil, italics is universally disabled
-
-(use-package tao-theme
- :straight '(tao-theme :type git :flavor melpa :host github :repo "11111000000/tao-theme-emacs"))
-
-(load-theme 'doom-dark+ t)
+  (setq doom-themes-enable-bold t   ; if nil, bold is universally disabled
+	doom-themes-enable-italic t)
+  (load-theme 'doom-henna t)) ; if nil, italics is universally disabled
 
 (use-package nerd-icons
   :straight t
@@ -107,6 +108,14 @@
   (org-mode))
 
 (setq org-html-validation-link nil)
+  (setq org-hide-emphasis-markers t)
+  (setq org-clock-sound "~/android.webm")
+(defun my/play-sound (orgin-fn sound)
+  (cl-destructuring-bind (_ _ file) sound
+    (make-process :name (concat "play-sound-" file)
+                  :connection-type 'pipe
+                  :command `("mpv" ,file))))
+(advice-add 'play-sound :around 'my/play-sound)
 
 (setq org-log-into-drawer t);; Allows notes to be inserted into drawers
 
@@ -115,11 +124,8 @@
 (setq org-enforce-todo-dependencies 1)
 
 (setq org-todo-keywords
-      '((sequence "READING(r)" "REFERENCE(R)" "|" "HIATUS(h)" "READ(d@)") 
+      '((sequence  "|" "HIATUS(h)" "READ(d@)") 
         (sequence "TODO" "|" "DONE" "CANCELLED" "POSTPONED")))
-
-(setq org-todo-keyword-faces
-      '(("REFERENCE" . "red")))
 
 (use-package org-bullets
 :straight t
@@ -159,22 +165,43 @@
 (setq org-log-done t)
 (global-set-key (kbd "C-c a") 'org-agenda)
 
+(use-package org-pomodoro
+  :straight t
+  :bind (("C-c C-x k" . org-pomodoro))
+  :config
+  (defun long-time ()
+    "Pomodoro timing for the home"
+    (interactive)
+    (setq org-pomodoro-length 50
+	  org-pomdoro-short-break-length 10
+	  org-pomodoro-long-break-length 30
+	  org-pomdoro-long-break-frequency 2))
+  (defun short-time ()
+    "Pomodoro for short time"
+    (interactive)
+    (setq oorg-pomodoro-length 25
+	  org-pomdoro-short-break-length 5
+	  org-pomodoro-long-break-length 30
+	  org-pomdoro-long-break-frequency 4)))
+
+(use-package auctex
+:straight t)
+
 (use-package evil
   :straight t
   :init
-(setq evil-want-integration t)
-(setq evil-want-keybinding nil)
-:config
-(define-key evil-insert-state-map (kbd "C-c") 'evil-normal-state)
-(evil-mode 1))
+  (setq evil-want-integration t
+	evil-want-keybinding nil)
+  :config
+  (setq	evil-undo-system 'undo-redo)
+  (keymap-set evil-insert-state-map "C-c" 'evil-normal-state)
+  (evil-mode 1))
 
 (use-package evil-collection
 :after evil
-:ensure t
+:straight t
 :config
 (evil-collection-init ))
-
-(evil-set-initial-state 'Info-mode 'emacs)
 
 (defun mp-elisp-mode-eval-buffer ()
   (interactive)
