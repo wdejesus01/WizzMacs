@@ -1,7 +1,7 @@
 #+TITLE:Welcome to the wonderful world of wizardry
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el
 #+STARTUP: overview
-#+SEQ_TODO: UPDATE N/A MAINTENANCE
+#+SEQ_TODO: UPDATE "|" 
 * General Setting
 ** User-Settings
 #+begin_src emacs-lisp
@@ -27,10 +27,9 @@
   (setq global-auto-revert-non-file-buffers t);;Same as above but for all buffers
 
   (fset 'yes-or-no-p 'y-or-n-p);Sets yes or no to y or no
-  (add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
+  ;(add-to-list 'image-types 'svg) ; Fixed inavlid type svg for macos
 
   (add-to-list 'default-frame-alist '(undecorated . t))
-  (setq Info-default-directory-list (list "~/.emacs.d/info/")) 
 #+end_src
 
 #+RESULTS:
@@ -74,8 +73,12 @@
 #+end_src
 ** Info
 #+begin_src emacs-lisp
-(add-to-list 'Info-directory-list (expand-file-name "~/.emacs.d/info"))
+  (add-to-list 'Info-default-directory-list "~/.emacs.d/info/") 
 #+end_src
+
+#+RESULTS:
+| ~/.emacs.d/info/ |
+
 ** Straight.el
 #+begin_src emacs-lisp
   
@@ -127,6 +130,422 @@
 #+begin_src emacs-lisp
   (define-key global-map (kbd "<f1>") #'toggle-frame-fullscreen)
 #+end_src
+* Shell
+#+begin_src emacs-lisp
+  (keymap-set global-map "C-c C-h" #'shell)
+#+end_src
+* Org
+** Org-Mode
+#+begin_src emacs-lisp
+  (use-package org
+    :defer
+    :straight '(org
+                :fork (:host nil
+                       :repo "https://git.tecosaur.net/tec/org-mode.git"
+                       :branch "dev"
+                       :remote "tecosaur")
+                :files (:defaults "etc")
+                :build t
+                :pre-build
+                (with-temp-file "org-version.el"
+  		(require 'lisp-mnt)
+                 (let ((version
+                        (with-temp-buffer
+                          (insert-file-contents "lisp/org.el")
+                          (lm-header "version")))
+                       (git-version
+                        (string-trim
+                         (with-temp-buffer
+                           (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
+                           (buffer-string)))))
+                  (insert
+                   (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
+                   (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
+                   "(provide 'org-version)\n")))
+                :pin nil) 
+    :init (require 'ox-md)
+    :bind (:map org-mode-map
+  	      ("C-c C-|" . org-table-insert-column)
+  	      ("C-c C-x i" . org-id-get-create))
+    :hook (org-mode . flyspell-mode)
+    :config
+     (setq org-html-validation-link nil org-hide-emphasis-markers t
+  	   org-clock-sound "~/android.webm"
+  	   org-list-allow-alphabetical t)
+     (keymap-global-set "C-c l" 'org-store-link)
+     (keymap-global-set "C-c a" 'org-agenda)
+     (keymap-global-set "C-c c" 'org-capture))
+
+#+end_src
+#+RESULTS:
+: org-id-get-create
+*** UPDATE org-latex-preview
+#+begin_src emacs-lisp
+ ;; Increase preview width
+  (plist-put org-latex-preview-appearance-options
+             :page-width 0.8)
+
+  ;; ;; Use dvisvgm to generate previews
+  ;; ;; You don't need this, it's the default:
+  ;; (setq org-latex-preview-process-default 'dvisvgm)
+  
+  ;; Turn on `org-latex-preview-mode', it's built into Org and much faster/more
+  ;; featured than org-fragtog. (Remember to turn off/uninstall org-fragtog.)
+  (add-hook 'org-mode-hook 'org-latex-preview-mode)
+
+  ;; ;; Block C-n, C-p etc from opening up previews when using `org-latex-preview-mode'
+  ;; (setq org-latex-preview-mode-ignored-commands
+  ;;       '(next-line previous-line mwheel-scroll
+  ;;         scroll-up-command scroll-down-command))
+
+  ;; ;; Enable consistent equation numbering
+  ;; (setq org-latex-preview-numbered t)
+
+  ;; Bonus: Turn on live previews.  This shows you a live preview of a LaTeX
+  ;; fragment and updates the preview in real-time as you edit it.
+  ;; To preview only environments, set it to '(block edit-special) instead
+  (setq org-latex-preview-mode-display-live t)
+
+  ;; More immediate live-previews -- the default delay is 1 second
+  (setq org-latex-preview-mode-update-delay 0.25))
+#+end_src
+
+#+RESULTS:
+: 0.25
+**** org-latex-preview-center
+#+begin_src emacs-lisp
+(defun my/org-latex-preview-uncenter (ov)
+    (overlay-put ov 'before-string nil))
+  (defun my/org-latex-preview-recenter (ov)
+    (overlay-put ov 'before-string (overlay-get ov 'justify)))
+  (defun my/org-latex-preview-center (ov)
+    (save-excursion
+      (goto-char (overlay-start ov))
+      (when-let* ((elem (org-element-context))
+                  ((or (eq (org-element-type elem) 'latex-environment)
+                       (string-match-p "^\\\\\\[" (org-element-property :value elem))))
+                  (img (overlay-get ov 'display))
+                  (prop `(space :align-to (- center (0.55 . ,img))))
+                  (justify (propertize " " 'display prop 'face 'default)))
+        (overlay-put ov 'justify justify)
+        (overlay-put ov 'before-string (overlay-get ov 'justify)))))
+  (define-minor-mode org-latex-preview-center-mode
+    "Center equations previewed with `org-latex-preview'."
+    :global nil
+    (if org-latex-preview-center-mode
+        (progn
+          (add-hook 'org-latex-preview-overlay-open-functions
+                    #'my/org-latex-preview-uncenter nil :local)
+          (add-hook 'org-latex-preview-overlay-close-functions
+                    #'my/org-latex-preview-recenter nil :local)
+          (add-hook 'org-latex-preview-overlay-update-functions
+                    #'my/org-latex-preview-center nil :local))
+      (remove-hook 'org-latex-preview-overlay-close-functions
+                    #'my/org-latex-preview-recenter)
+      (remove-hook 'org-latex-preview-overlay-update-functions
+                    #'my/org-latex-preview-center)
+      (remove-hook 'org-latex-preview-overlay-open-functions
+                    #'my/org-latex-preview-uncenter))))
+#+end_src
+
+#+RESULTS:
+
+*** Keys
+#+begin_src emacs-lisp
+  (evil-define-key 'normal org-mode-map
+    (kbd "SPC h") #'org-insert-heading
+    (kbd "SPC a h") #'org-insert-heading-after-current
+    (kbd "SPC s h") #'org-insert-subheading)
+#+end_src
+
+#+RESULTS:
+
+*** TODO
+#+begin_src emacs-lisp
+  (setq org-todo-keywords
+        '((sequence
+  	 "TODO(t)" ;To be done
+  	 "HOLD(H)" ;In hiatus
+  	 "?(?)" ;To be Considered
+  	 "|"
+  	 "DONE(D)" ;Done 
+  	 "VOID(V)" ;Rendered Void
+  	)
+  	(sequence
+  	 "READ(r)" ;To be read
+  	 "|" 
+  	 )
+  	(sequence
+  	 "BUY(b)" ;To be bought
+  	 "|"
+  	 "BOUGHT(B)" 
+  	 )
+  	(sequence
+  	"FIX(f)" ;Not functioning as intended
+  	"|"
+  	"FIXED(F)"
+  	))
+        org-tag-alist ;Controlled Vocabulary of tags
+        '(("emacs" . ?e);Prima Facie(Self-evident)
+  	("info" . ?i) ;Information about Information
+  	("cmpt" . ?c) ;Computers & their sciences
+  	)
+        org-fast-tag-selection-single-key 'nil) ;C-u once to show selection,twice to remove single-key-exit
+        
+
+  	 
+
+#+end_src
+
+#+RESULTS:
+*** org-archive
+#+begin_src emacs-lisp
+  (setq org-archive-location "archive/%s::") ;;Store items in archive files in seperate archive directory
+#+end_src
+
+#+RESULTS:
+: archive/%s::
+
+*** UPDATE Org-Tempo
+#+BEGIN_SRC emacs-lisp
+  (use-package org-tempo
+  :straight '(:type built-in)
+  :config
+  (setq org-structure-template-alist (append '(("el" .  "src emacs-lisp")) '(("cc" .  "src C")) org-structure-template-alist)))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+*** org-refile
+[[https://blog.aaronbieber.com/2017/03/19/organizing-notes-with-refile.html][Inspiration]]
+#+begin_src emacs-lisp
+  (setq org-refile-allow-creating-parent-nodes 'confirm
+        org-refile-use-outline-path 'file
+        org-outline-path-complete-in-steps nil
+        org-refile-targets '((org-agenda-files   :maxlevel . 2)
+  			   (nil :maxlevel . 3 )))
+
+#+end_src
+
+#+RESULTS:
+: ((org-agenda-files :maxlevel . 2) (nil :maxlevel . 3))
+
+*** Org-Babel
+**** Languages
+#+BEGIN_SRC emacs-lisp
+      ;;select languages for bable
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (C . t)
+       (python . t)
+       (shell . t)
+       (scheme . t)
+       (lisp . t)))
+
+    
+  (setq org-babel-python-command "python3")
+  (setq org-confirm-babel-evaluate nil);;Confirmation to execute code block
+
+
+#+END_SRC 
+
+#+RESULTS:
+
+**** Tangle
+#+BEGIN_SRC emacs-lisp
+  (defun efs/org-babel-tangle-config()
+  (when(string-equal (buffer-file-name)
+                     (expand-file-name "~/.emacs.d/WizzyMacs.org"))
+
+  (let ((org-confirm-babel-evaluate nil))
+    (org-babel-tangle))))
+
+  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
+
+ #+END_SRC
+
+#+RESULTS:
+| #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | (lambda nil (add-hook 'after-save-hook #'efs/org-babel-tangle-config)) | org-tempo-setup | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | flyspell-mode |
+
+*** Org-Capture
+- For help with templates go [[info:org#Capture templates][here]] 
+#+begin_src emacs-lisp
+  (setq org-default-notes-file (expand-file-name "log.org" org-directory)
+        org-capture-templates
+  	'(("c" "Capture" entry (file "") 
+  	   "* ?  %?\n\nCaptured on: %U")))
+#+end_src
+
+#+RESULTS:
+
+*** Appearence
+**** org-Settings
+#+BEGIN_SRC emacs-lisp
+  (setq org-hidden-keywords '(title)
+        org-startup-indented t
+        org-startup-with-inline-images t
+        org-startup-folded t)
+#+END_SRC
+
+#+RESULTS:
+: t
+**** Org-Bullets
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :straight t
+    :config
+    (add-hook 'org-mode-hook (lambda () (org-bullets-mode t))))
+#+end_src
+
+#+RESULTS:
+: t
+**** Better list-bullets
+#+begin_src emacs-lisp
+(font-lock-add-keywords 'org-mode
+                        '(("^ +\\([-*]\\) "
+                           (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+#+end_src
+
+#+RESULTS:
+
+*** Org-agenda
+
+#+RESULTS:
+: org-agenda-undo
+
+
+*** Notes
+#+begin_src emacs-lisp
+  (setq org-log-state-notes-into-drawer "NOTES")
+#+end_src
+
+** Citar
+#+begin_src emacs-lisp
+  (use-package citar
+    :custom
+    (citar-bibliography '("~/org-roam/biblio.bib"))
+    :hook
+    (LaTeX-mode . citar-capf-setup)
+    (org-mode . citar-capf-setup))
+#+end_src
+
+#+RESULTS:
+| citar-capf-setup | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | #[nil ((org-bullets-mode t)) nil] | #[nil ((add-hook 'after-save-hook #'efs/org-babel-tangle-config)) nil] | org-tempo-setup | flyspell-mode | org-latex-preview--clear-preamble-cache | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes |
+** Org-Roam
+#+begin_src emacs-lisp
+  (use-package org-roam
+    :straight  t
+    :demand t
+    :custom
+    (org-roam-directory (file-truename "~/org-roam"))
+    (org-roam-dailies-capture-templates '(("d" "default" entry "%?"
+  					 :target (file+head "%<%Y-%m-%d>.org"
+  							    "#+title: %<%Y-%m-%d>\n"))))
+    (org-roam-capture-templates '(("d" "default" plain "%?" 
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}")
+  				 :unnarrowed t)
+  				("m" "Math" plain (file "~/org-roam/templates/math.org")
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :math:")
+  				 :unnarrowed t)
+  				("c" "computer science" plain (file "~/org-roam/templates/math.org")
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :cmpt:")
+  				 :unnarrowed t)
+  				("s" "Spanish" plain "%?"
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :span:lang:")
+  				 :unnarrowed t)
+  				("l" "Linguistics" plain "%?"
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :lang:")
+  				 :unnarrowed t)
+  				("e" "Emacs Related")
+  				("ee" "Emacs" plain "%?"
+                                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :emacs:")
+  				 :unnarrowed t)
+  				("el" "Elisp" plain "%?"
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :emacs:lisp:")
+  				 :unnarrowed t)))
+    :bind (("C-c n l" . org-roam-buffer-toggle)
+           ("C-c n f" . org-roam-node-find)
+           ("C-c n g" . org-roam-graph)
+           ("C-c n i" . org-roam-node-insert)
+           ("C-c n c" . org-roam-capture)
+  	 ("C-c n t" . org-roam-dailies-capture-today)
+  	 ("C-c n C-t" . org-roam-dailies-goto-today)
+  	 ("C-c n p" . org-roam-dailies-goto-previous-note)
+  	 ("C-c n n" . org-roam-dailies-goto-next-note)) 
+    :config
+    ;; If you're using a vertical completion framework, you might want a more informative completion interface
+    (setq org-roam-node-display-template
+  	(concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag))
+  	org-roam-dailies-directory
+  	(expand-file-name "daily" org-roam-directory))
+    (org-roam-db-autosync-mode)
+      (cl-defmethod org-roam-node-type ((node org-roam-node))
+      "Return the TYPE of NODE."
+      (condition-case nil
+          (file-name-nondirectory
+           (directory-file-name
+            (file-name-directory
+             (file-relative-name (org-roam-node-file node) org-roam-directory))))
+        (error "")))
+
+      (setq org-roam-node-display-template
+    	(concat "${type:15} ${title:*} " (propertize "${tags:10}" 'face 'org-tag))
+    	org-roam-dailies-directory
+    	(expand-file-name "daily" org-roam-directory))
+      (org-roam-db-autosync-mode)
+
+    (defun wiz/org-roam-node-from-cite (citeKey)
+      (interactive (list (citar-select-ref)))
+        (org-roam-capture- :templates
+                           '(("r" "reference" plain "%?" :if-new
+                              (file+head "reference/${title}.org"
+                                         ":PROPERTIES:
+  :ROAM_REFS: [cite:@${citekey}]
+  :END:
+  ,#+title: ${title}\n")
+                              :immediate-finish t
+                              :unnarrowed t))
+                           :info (list :citekey citeKey) ;; Passes plist to info
+                           :node (org-roam-node-create :title (citar-get-value 'title citeKey))
+                           :props '(:finalize find-file ))))
+
+#+end_src
+
+#+RESULTS:
+: org-roam-dailies-goto-next-note
+
+** Auctex 
+#+begin_src emacs-lisp
+  (use-package auctex
+  :straight t)
+#+end_src
+** Org-Download
+#+begin_src emacs-lisp
+  (use-package org-download
+    :straight t
+    :config
+    (add-hook 'dired-mode-hook 'org-download-enable))
+#+end_src
+
+#+RESULTS:
+: t
+*** Keys 
+#+begin_src emacs-lisp
+  (evil-define-key 'normal org-mode-map (kbd "SPC SPC") #'org-download-screenshot) 
+#+end_src
+
+#+RESULTS:
+
+** org-directory 
+#+begin_src emacs-lisp
+  (directory-files org-directory)
+#+end_src
+
+#+RESULTS:
+| . | .. | .DS_Store | .stfolder | College | archive | cleaning.org | emacs.org | life.org | log.org | nyc.org | pegs.org | read.org | recipe.org | school.org | shop.org | spring25 | vinaya.org | writing.org |
+
 * Evil
 #+begin_src emacs-lisp
   (use-package evil
@@ -234,320 +653,15 @@
 #+RESULTS:
 : t
 
-* Org
-** Org-Mode
+* Mail
+** browse-url-mailto
 #+begin_src emacs-lisp
-  (use-package org
-    :defer
-    :straight '(org
-                :fork (:host nil
-                       :repo "https://git.tecosaur.net/tec/org-mode.git"
-                       :branch "dev"
-                       :remote "tecosaur")
-                :files (:defaults "etc")
-                :build t
-                :pre-build
-                (with-temp-file "org-version.el"
-  		(require 'lisp-mnt)
-                 (let ((version
-                        (with-temp-buffer
-                          (insert-file-contents "lisp/org.el")
-                          (lm-header "version")))
-                       (git-version
-                        (string-trim
-                         (with-temp-buffer
-                           (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
-                           (buffer-string)))))
-                  (insert
-                   (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
-                   (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
-                   "(provide 'org-version)\n")))
-                :pin nil) 
-    :init (require 'ox-md)
-    :bind (:map org-mode-map
-  	      ("C-c C-|" . org-table-insert-column)
-  	      ("C-c C-x i" . org-id-get-create))
-    :hook (org-mode . flyspell-mode)
-    :config
-     (setq org-html-validation-link nil org-hide-emphasis-markers t
-  	   org-clock-sound "~/android.webm"
-  	   org-list-allow-alphabetical t)
-     (keymap-global-set "C-c l" 'org-store-link)
-     (keymap-global-set "C-c a" 'org-agenda)
-     (keymap-global-set "C-c c" 'org-capture))
-  
-#+end_src
-#+RESULTS:
-: org-id-get-create
-*** Keys
-#+begin_src emacs-lisp
-  (evil-define-key 'normal org-mode-map
-    (kbd "SPC h") #'org-insert-heading
-    (kbd "SPC a h") #'org-insert-heading-after-current
-    (kbd "SPC s h") #'org-insert-subheading)
+  (setq browse-url-mailto-function 'browse-url-generic)
+  (setq browse-url-generic-program "open")
 #+end_src
 
 #+RESULTS:
-
-*** TODO
-#+begin_src emacs-lisp
-  (setq org-todo-keywords
-        '((sequence
-  	 "TODO(t)" ;To be done
-  	 "HOLD(H!/!)" ;In hiatus
-  	 "WAIT(w!/!)" ;Waiting on
-  	 "?(?)" ;Considerable but not yet certain
-  	 "|"
-  	 "DONE(D)" ;Done 
-  	 "VOID(V@/@)" ;Rendered Void
-  	)
-  	(sequence
-  	 "BUY(b/!)" ;To be bought
-  	 "|"
-  	 "BOUGHT(B!)" ;Bought
-  	 )
-  	(sequence
-  	"FIX(f)" ;Not functioning as intended
-  	"|"
-  	"FIXED(F!)"
-  	)
-  	(sequence
-  	 "REVIEW(v)" ;Information to be examined
-  	 "REVIEWED(V!)" 
-  	 )
-  	(sequence
-  	"READING(r!)" ;Currently Being Read
-  	"UNREAD(U/!)" ;Backlog of books to read
-  	"TOREAD(T)" ;To read when things open up
-  	"|"
-  	"READ(R!)"
-  	))
-        org-tag-alist ;Controlled Vocabulary of tags
-        '(("emacs" . ?e);Prima Facie(Self-evident)
-  	("info" . ?i) ;Information about Information
-  	("cmpt" . ?c) ;Computers & their sciences
-  	)
-        org-fast-tag-selection-single-key 'nil) ;C-u once to show selection,twice to remove single-key-exit
-        
-
-  	 
-
-#+end_src
-
-#+RESULTS:
-*** org-archive
-#+begin_src emacs-lisp
-  (setq org-archive-location "archive/%s::") ;;Store items in archive files in seperate archive directory
-#+end_src
-
-#+RESULTS:
-: archive/%s::
-
-*** Org-Tempo
-#+BEGIN_SRC emacs-lisp
-  (use-package org-tempo
-  :straight '(:type built-in))
-  :config
-  (add-to-list 'org-structure-template-alist '("el". "src emacs-lisp"));;Autofill code blocks
-
-#+END_SRC
-*** org-refile
-[[https://blog.aaronbieber.com/2017/03/19/organizing-notes-with-refile.html][Inspiration]]
-#+begin_src emacs-lisp
-  (setq org-refile-allow-creating-parent-nodes 'confirm
-        org-refile-use-outline-path 'file
-        org-outline-path-complete-in-steps nil
-        org-refile-targets '((org-agenda-files   :maxlevel . 2)
-  			   (nil :maxlevel . 3 )))
-
-#+end_src
-
-#+RESULTS:
-: ((org-agenda-files :maxlevel . 2) (nil :maxlevel . 3))
-
-*** Org-Babel
-**** Languages
-#+BEGIN_SRC emacs-lisp
-      ;;select languages for bable
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((emacs-lisp . t)
-       (C . t)
-       (python . t)
-       (shell . t)
-       (scheme . t)))
-
-    
-  (setq org-babel-python-command "python3")
-  (setq org-confirm-babel-evaluate nil);;Confirmation to execute code block
-
-
-#+END_SRC 
-
-#+RESULTS:
-
-**** Tangle
-#+BEGIN_SRC emacs-lisp
-  (defun efs/org-babel-tangle-config()
-  (when(string-equal (buffer-file-name)
-                     (expand-file-name "~/.emacs.d/WizzyMacs.org"))
-
-  (let ((org-confirm-babel-evaluate nil))
-    (org-babel-tangle))))
-
-  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'efs/org-babel-tangle-config)))
-
- #+END_SRC
-
-#+RESULTS:
-| #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | (lambda nil (add-hook 'after-save-hook #'efs/org-babel-tangle-config)) | org-tempo-setup | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | flyspell-mode |
-
-*** Org-Capture
-- For help with templates go [[info:org#Capture templates][here]] 
-#+begin_src emacs-lisp
-  (setq org-default-notes-file (expand-file-name "log.org" org-directory)
-        org-capture-templates
-  	'(("c" "Capture" entry (file "") 
-  	   "* ?  %?\n\nCaptured on: %U")))
-#+end_src
-
-#+RESULTS:
-| c | Capture | entry | (file ) | * ?  %? |
-
-Captured on: %U |
-
-Captured on: %U |
-
-Captured on: %U |
-| i | Info | entry | (file emacs.org) | * REVIEW %A %? | :unnarrowed | t |
-
-Made on: %U |
-| e | emacs | entry | (file emacs.org) | * %^{what do you want todo?} |
-%? |
-| i | Info | entry | (file emacs.org) | * REVIEW %A %? | :unnarrowed | t |
-
-*** Appearence
-**** org-Settings
-#+BEGIN_SRC emacs-lisp
-  (setq org-hidden-keywords '(title)
-        org-startup-indented t
-        org-startup-with-inline-images t
-        org-startup-folded t)
-#+END_SRC
-
-#+RESULTS:
-: t
-**** Org-Bullets
-#+begin_src emacs-lisp
-  (use-package org-bullets
-    :straight t
-    :config
-    (add-hook 'org-mode-hook (lambda () (org-bullets-mode t))))
-#+end_src
-
-#+RESULTS:
-: t
-**** Better list-bullets
-#+begin_src emacs-lisp
-(font-lock-add-keywords 'org-mode
-                        '(("^ +\\([-*]\\) "
-                           (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-#+end_src
-
-#+RESULTS:
-
-*** Org-agenda
-
-#+RESULTS:
-: org-agenda-undo
-
-
-*** Notes
-#+begin_src emacs-lisp
-  (setq org-log-state-notes-into-drawer "NOTES")
-#+end_src
-
-** Org-Roam
-#+begin_src emacs-lisp
-  (use-package org-roam
-    :straight  t
-    :demand t
-    :custom
-    (org-roam-directory (file-truename "~/org-roam"))
-    (org-roam-dailies-capture-templates '(("d" "default" entry "%?"
-  					 :target (file+head "%<%Y-%m-%d>.org"
-  							    "#+title: %<%Y-%m-%d>\n"))))
-    (org-roam-capture-templates '(("d" "default" plain "%?" 
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}")
-  				 :unnarrowed t)
-  				("b" "Buddha" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: Buddha")
-  				 :unnarrowed t)
-  				("m" "Math" plain (file "~/org-roam/templates/math.org")
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: math")
-  				 :unnarrowed t)
-  				("c" "computer science" plain (file "~/org-roam/templates/math.org")
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: cmpt")
-  				 :unnarrowed t)
-  				("s" "Spanish" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :span:lang:")
-  				 :unnarrowed t)
-  				("l" "Linguistics" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :lang:")
-  				 :unnarrowed t)
-  				("e" "Emacs" plain "%?"
-                                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :emacs:")
-  				 :unnarrowed t)))
-    :bind (("C-c n l" . org-roam-buffer-toggle)
-           ("C-c n f" . org-roam-node-find)
-           ("C-c n g" . org-roam-graph)
-           ("C-c n i" . org-roam-node-insert)
-           ("C-c n c" . org-roam-capture)
-  	 ("C-c n t" . org-roam-dailies-capture-today)
-  	 ("C-c n C-t" . org-roam-dailies-goto-today)
-  	 ("C-c n p" . org-roam-dailies-goto-previous-note)
-  	 ("C-c n n" . org-roam-dailies-goto-next-note)) 
-    :config
-    ;; If you're using a vertical completion framework, you might want a more informative completion interface
-    (setq org-roam-node-display-template
-  	(concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag))
-  	org-roam-dailies-directory
-  	(expand-file-name "daily" org-roam-directory))
-    (org-roam-db-autosync-mode))
-#+end_src
-
-#+RESULTS:
-: org-roam-dailies-goto-next-note
-
-** Auctex 
-#+begin_src emacs-lisp
-  (use-package auctex
-  :straight t)
-#+end_src
-** Org-Download
-#+begin_src emacs-lisp
-  (use-package org-download
-    :straight t
-    :config
-    (add-hook 'dired-mode-hook 'org-download-enable))
-#+end_src
-
-#+RESULTS:
-: t
-*** Keys 
-#+begin_src emacs-lisp
-  (evil-define-key 'normal org-mode-map (kbd "SPC SPC") #'org-download-screenshot) 
-#+end_src
-
-#+RESULTS:
-
-** org-directory 
-#+begin_src emacs-lisp
-  (directory-files org-directory)
-#+end_src
-
-#+RESULTS:
-| . | .. | .DS_Store | .stfolder | College | archive | cleaning.org | emacs.org | life.org | log.org | nyc.org | pegs.org | read.org | recipe.org | school.org | shop.org | spring25 | vinaya.org | writing.org |
+: open
 
 * Completion
 ** Vertico
@@ -664,73 +778,6 @@ Made on: %U |
 
 #+RESULTS:
 | eglot-ensure | eglot | evil-collection-python-set-evil-shift-width |
-** PHP
-#+begin_src emacs-lisp
-  (use-package php-mode
-    :straight t)
-#+end_src
-
-#+RESULTS:
-
-* EMMS
-#+begin_src emacs-lisp
-  (use-package emms
-    :straight t
-    :init
-    (require 'emms-setup)
-    (emms-all)
-    :custom
-    (emms-source-file-default-directory (expand-file-name "~/music/"))
-    (emms-browser-covers #'emms-browser-cache-thumbnail-async)
-    (emms-player-list '(emms-player-mpv))
-    (emms-info-asynchronously t)
-    (emms-source-file-directory-tree-function 'emms-source-file-directory-tree-find)
-
-    :config
-    (setq emms-info-functions '(emms-info-native)))
-
-
-#+End_src
-#+RESULTS:
-: t
-
-** Keymap
-#+begin_src emacs-lisp
-  (defvar-keymap emms-prefix-map
-    :doc "Keymap for using emms commands that should be globally accessible"
-    "s" #'emms-start
-    "S" #'emms-stop
-    "n" #'emms-next
-    "<SPC>" #'emms-pause
-    "P" #'emms-previous
-    "e" #'emms
-    "C-s" #'emms-shuffle
-    "M-s" #'emms-sort
-    "S-n" #'emms-playlist-new
-    "b" #'emms-smart-browse
-    "f" #'emms-play-file)
-
-  (keymap-set global-map "C-c m" emms-prefix-map)
-#+end_src
-
-#+RESULTS:
-: (keymap (98 . emms-smart-browse) (33554542 . emms-playlist-new) (27 keymap (115 . emms-sort)) (19 . emms-shuffle) (101 . emms) (80 . emms-previous) (32 . emms-pause) (110 . emms-next) (83 . emms-stop) (115 . emms-start))
-
-* calibredb
-#+begin_src emacs-lisp
-  (use-package calibredb
-    :straight t
-    :config
-    (keymap-global-set "M-c" #'calibredb)
-    (setq calibredb-root-dir (expand-file-name "~/Books")
-  	calibredb-db-dir (expand-file-name "metadata.db" calibredb-root-dir)
-  	calibredb-library-alist '(("~/Books" (name . "Calibre")))))
-
-#+End_SrC
-
-#+RESULTS:
-: t
-
 * Treemacs
 #+begin_src emacs-lisp
   (use-package treemacs
