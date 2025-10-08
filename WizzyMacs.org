@@ -1,6 +1,5 @@
 #+TITLE:Welcome to the wonderful world of wizardry
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el
-#+STARTUP: overview
 #+SEQ_TODO: UPDATE "|" 
 * General Setting
 ** User-Settings
@@ -134,6 +133,39 @@
 #+begin_src emacs-lisp
   (keymap-set global-map "C-c C-h" #'shell)
 #+end_src
+* Evil
+#+begin_src emacs-lisp
+  (use-package evil
+    :straight t
+    :init
+    (setq evil-want-integration t
+  	  evil-want-keybinding nil
+  	  evil-want-fine-undo t
+  	  evil-want-C-w-in-emacs-state t)
+    :config
+    (evil-set-initial-state 'calibredb-show-mode 'emacs)
+    (evil-set-initial-state 'calibredb-search-mode'emacs)
+    (evil-set-undo-system 'undo-redo)
+    (keymap-set evil-insert-state-map "C-c" 'evil-normal-state)
+    (keymap-unset evil-motion-state-map "<SPC>" t) 
+    (evil-mode 1))
+
+#+end_src
+
+ #+RESULTS:
+ : t
+** Evil-Collection
+#+begin_src emacs-lisp
+  (use-package evil-collection
+  :after evil
+  :straight t
+  :config
+  (evil-collection-init))
+#+end_src
+
+#+RESULTS:
+: t
+
 * Org
 ** Org-Mode
 #+begin_src emacs-lisp
@@ -171,7 +203,8 @@
     :config
      (setq org-html-validation-link nil org-hide-emphasis-markers t
   	   org-clock-sound "~/android.webm"
-  	   org-list-allow-alphabetical t)
+  	   org-list-allow-alphabetical t
+  	   org-insert-heading-respect-content t)
      (keymap-global-set "C-c l" 'org-store-link)
      (keymap-global-set "C-c a" 'org-agenda)
      (keymap-global-set "C-c c" 'org-capture))
@@ -207,7 +240,7 @@
   (setq org-latex-preview-mode-display-live t)
 
   ;; More immediate live-previews -- the default delay is 1 second
-  (setq org-latex-preview-mode-update-delay 0.25))
+  (setq org-latex-preview-mode-update-delay 0.25)
 #+end_src
 
 #+RESULTS:
@@ -245,7 +278,7 @@
       (remove-hook 'org-latex-preview-overlay-update-functions
                     #'my/org-latex-preview-center)
       (remove-hook 'org-latex-preview-overlay-open-functions
-                    #'my/org-latex-preview-uncenter))))
+                    #'my/org-latex-preview-uncenter)))
 #+end_src
 
 #+RESULTS:
@@ -259,6 +292,14 @@
 #+end_src
 
 #+RESULTS:
+
+*** org-goto
+#+begin_src emacs-lisp
+  (setq org-goto-interface 'outline-path-completion)
+#+end_src
+
+#+RESULTS:
+: outline-path-completion
 
 *** TODO
 #+begin_src emacs-lisp
@@ -311,7 +352,10 @@
   (use-package org-tempo
   :straight '(:type built-in)
   :config
-  (setq org-structure-template-alist (append '(("el" .  "src emacs-lisp")) '(("cc" .  "src C")) org-structure-template-alist)))
+  (setq org-structure-template-alist (append
+  				    '(("el" .  "src emacs-lisp"))
+  				    '(("cc" .  "src C"))
+  				    '(("L" . "src lisp")) org-structure-template-alist)))
 #+END_SRC
 
 #+RESULTS:
@@ -375,10 +419,89 @@
   (setq org-default-notes-file (expand-file-name "log.org" org-directory)
         org-capture-templates
   	'(("c" "Capture" entry (file "") 
+  	   "* ?  %?\n\nCaptured on: %U")
+  	  ("e" "Emacs" entry (file "emacs.org")
+  	   "* ?  %?\n\nCaptured on: %U")
+  	  ;Made at 2:22pm Oct 2nd
+  	  ;Template to create entry for a class using org-goto to choose headline
+  	  ("s" "School" entry (file+function "school.org"
+  					     (lambda () (let ((org-goto-max-level  2)))
+  					       (org-goto)))
   	   "* ?  %?\n\nCaptured on: %U")))
+  							   
+  	   
 #+end_src
 
 #+RESULTS:
+| c | Capture | entry | (file ) | * ?  %? |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| s | School | entry | (file+function school.org (lambda nil (let ((org-goto-max-level 2))) (org-goto))) | * ?  %? |
+
+Captured on: %U |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| s | School | entry | (file+function school.org (lambda nil (let ((org-goto-max-level 2))) (org-goto))) | * ?  %? |
+
+Captured on: %U |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| s | School | entry | (file+function school.org (lambda nil (let ((org-goto-max-level 2))) (org-goto))) | * ?  %? |
+
+Captured on: %U |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| s | School | entry | (file+function school.org (lambda nil (let ((org-goto-max-level 2))) (org-goto))) | * ?  %? |
+
+Captured on: %U |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| s | School | entry | (file+function school.org org-goto) | * ?  %? |
+
+Captured on: %U |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| s | School | entry | (file+function school.org org-goto) | * ?  %? |
+
+Captured on: %U |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| s | School | entry | (file+function school.org (org-goto)) | * ?  %? |
+
+Captured on: %U |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
+| c  | Computer Science         |       |                                                                                     |
+| cl | Linux Kernel Programming | plain | #'(lambda nil (shell-command (format touch %s (read-file-name Class: ~/College/)))) |
+
+Captured on: %U |
+| e | Emacs | entry | (file emacs.org) | * ?  %? |
+
+Captured on: %U |
 
 *** Appearence
 **** org-Settings
@@ -415,12 +538,23 @@
 #+RESULTS:
 : org-agenda-undo
 
+*** UPDATE org-tree-to-indirect-buffer
+#+begin_src emacs-lisp
+  (defadvice org-tree-to-indirect-buffer (before indirect-buffer-prefix-arg
+  					       activate compile)
+    (interactive (list (cond ((numberp current-prefix-arg) (if (>= current-prefix-arg 0)
+  							     current-prefix-arg))
+  			   ((symbolp current-prefix-arg) current-prefix-arg)
+  			   ((listp current-prefix-arg) current-prefix-arg)))))
+#+end_src
+
+#+RESULTS:
+: org-tree-to-indirect-buffer
 
 *** Notes
 #+begin_src emacs-lisp
   (setq org-log-state-notes-into-drawer "NOTES")
 #+end_src
-
 ** Citar
 #+begin_src emacs-lisp
   (use-package citar
@@ -428,11 +562,24 @@
     (citar-bibliography '("~/org-roam/biblio.bib"))
     :hook
     (LaTeX-mode . citar-capf-setup)
-    (org-mode . citar-capf-setup))
+    (org-mode . citar-capf-setup)
+    :config
+    (evil-define-key 'normal org-mode-map (kbd "SPC c i k") #'citar-insert-citation))
 #+end_src
 
 #+RESULTS:
-| citar-capf-setup | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | #[nil ((org-bullets-mode t)) nil] | #[nil ((add-hook 'after-save-hook #'efs/org-babel-tangle-config)) nil] | org-tempo-setup | flyspell-mode | org-latex-preview--clear-preamble-cache | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes |
+| #[0 \305\306	>\203 \307 |
+\310\311#\210\307\312\313#\210\307\314\315#\210\306	>\203, \307
+\316\317#\210\307
+\320\321#\210\322	>\203> \307\323\324#\210\307\325\324#\210\326	>\203P \307
+\327\317#\210\307
+\330\321#\210\331	>\203_ \332\311\333BC\334#\210\335	>\203k \332\311\336\334#\210\337	>\203w \332\311\340\334#\210\341\342\343\344#\207 [org-mouse-context-menu-function org-mouse-features org-mouse-map org-mode-map org-outline-regexp-bol org-mouse-context-menu context-menu org-defkey [mouse-3] nil [mouse-3] org-mouse-show-context-menu [down-mouse-1] org-mouse-down-mouse [C-drag-mouse-1] org-mouse-move-tree [C-down-mouse-1] org-mouse-move-tree-start yank-link [S-mouse-2] org-mouse-yank-link [drag-mouse-3] move-tree [drag-mouse-3] [down-mouse-3] activate-stars font-lock-add-keywords (0 `(face org-link mouse-face highlight keymap ,org-mouse-map) 'prepend) t activate-bullets ((^[ 	]*\([-+*]\|[0-9]+[.)]\) + (1 `(face org-link keymap ,org-mouse-map mouse-face highlight) 'prepend))) activate-checkboxes ((^[ 	]*\(?:[-+*]\|[0-9]+[.)]\)[ 	]+\(?:\[@\(?:start:\)?[0-9]+\][ 	]*\)?\(\[[- X]\]\) (1 `(face nil keymap ,org-mouse-map mouse-face highlight) prepend))) advice-add org-open-at-point :around org--mouse-open-at-point] 4] |#[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] |citar-capf-setup |#[nil ((org-bullets-mode t)) nil] |#[nil ((add-hook 'after-save-hook #'efs/org-babel-tangle-config)) nil] |org-tempo-setup |org-latex-preview-mode |flyspell-mode |org-latex-preview--clear-preamble-cache |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] |org-babel-result-hide-spec |org-babel-hide-all-hashes |
+\310\311#\210\307\312\313#\210\307\314\315#\210\306	>\203, \307
+\316\317#\210\307
+\320\321#\210\322	>\203> \307\323\324#\210\307\325\324#\210\326	>\203P \307
+\327\317#\210\307
+\330\321#\210\331	>\203_ \332\311\333BC\334#\210\335	>\203k \332\311\336\334#\210\337	>\203w \332\311\340\334#\210\341\342\343\344#\207 [org-mouse-context-menu-function org-mouse-features org-mouse-map org-mode-map org-outline-regexp-bol org-mouse-context-menu context-menu org-defkey [mouse-3] nil [mouse-3] org-mouse-show-context-menu [down-mouse-1] org-mouse-down-mouse [C-drag-mouse-1] org-mouse-move-tree [C-down-mouse-1] org-mouse-move-tree-start yank-link [S-mouse-2] org-mouse-yank-link [drag-mouse-3] move-tree [drag-mouse-3] [down-mouse-3] activate-stars font-lock-add-keywords (0 `(face org-link mouse-face highlight keymap ,org-mouse-map) 'prepend) t activate-bullets ((^[ 	]*\([-+*]\|[0-9]+[.)]\) + (1 `(face org-link keymap ,org-mouse-map mouse-face highlight) 'prepend))) activate-checkboxes ((^[ 	]*\(?:[-+*]\|[0-9]+[.)]\)[ 	]+\(?:\[@\(?:start:\)?[0-9]+\][ 	]*\)?\(\[[- X]\]\) (1 `(face nil keymap ,org-mouse-map mouse-face highlight) prepend))) advice-add org-open-at-point :around org--mouse-open-at-point] 4] |#[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] |citar-capf-setup |#[nil ((org-bullets-mode t)) nil] |#[nil ((add-hook 'after-save-hook #'efs/org-babel-tangle-config)) nil] |org-tempo-setup |org-latex-preview-mode |flyspell-mode |org-latex-preview--clear-preamble-cache |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] |org-babel-result-hide-spec |org-babel-hide-all-hashes |
+
 ** Org-Roam
 #+begin_src emacs-lisp
   (use-package org-roam
@@ -444,26 +591,26 @@
   					 :target (file+head "%<%Y-%m-%d>.org"
   							    "#+title: %<%Y-%m-%d>\n"))))
     (org-roam-capture-templates '(("d" "default" plain "%?" 
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}")
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}")
   				 :unnarrowed t)
-  				("m" "Math" plain (file "~/org-roam/templates/math.org")
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :math:")
+  				("m" "Math" plain "%?"
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :math:")
   				 :unnarrowed t)
-  				("c" "computer science" plain (file "~/org-roam/templates/math.org")
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :cmpt:")
+  				("c" "computer science" plain "%?"
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :cmpt:")
   				 :unnarrowed t)
   				("s" "Spanish" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :span:lang:")
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :span:lang:")
   				 :unnarrowed t)
   				("l" "Linguistics" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :lang:")
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :ling:")
   				 :unnarrowed t)
   				("e" "Emacs Related")
   				("ee" "Emacs" plain "%?"
-                                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :emacs:")
+                                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :emacs:")
   				 :unnarrowed t)
   				("el" "Elisp" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :emacs:lisp:")
+  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :emacs:lisp:")
   				 :unnarrowed t)))
     :bind (("C-c n l" . org-roam-buffer-toggle)
            ("C-c n f" . org-roam-node-find)
@@ -512,9 +659,15 @@
                            :props '(:finalize find-file ))))
 
 #+end_src
-
 #+RESULTS:
 : org-roam-dailies-goto-next-note
+*** Keys
+#+begin_src emacs-lisp
+  (evil-global-set-key 'normal (kbd "C-c n r") #'wiz/org-roam-node-from-cite)
+#+end_src
+
+#+RESULTS:
+: wiz/org-roam-node-from-cite
 
 ** Auctex 
 #+begin_src emacs-lisp
@@ -523,10 +676,12 @@
 #+end_src
 ** Org-Download
 #+begin_src emacs-lisp
-  (use-package org-download
-    :straight t
-    :config
-    (add-hook 'dired-mode-hook 'org-download-enable))
+    (use-package org-download
+      :straight t
+      :config
+      (add-hook 'dired-mode-hook 'org-download-enable)
+      (setq org-download-screenshot-method "screencapture -i %s"
+      org-download-image-dir "images"))
 #+end_src
 
 #+RESULTS:
@@ -545,39 +700,7 @@
 
 #+RESULTS:
 | . | .. | .DS_Store | .stfolder | College | archive | cleaning.org | emacs.org | life.org | log.org | nyc.org | pegs.org | read.org | recipe.org | school.org | shop.org | spring25 | vinaya.org | writing.org |
-
-* Evil
-#+begin_src emacs-lisp
-  (use-package evil
-    :straight t
-    :init
-    (setq evil-want-integration t
-  	  evil-want-keybinding nil
-  	  evil-want-fine-undo t
-  	  evil-want-C-w-in-emacs-state t)
-    :config
-    (evil-set-initial-state 'calibredb-show-mode 'emacs)
-    (evil-set-initial-state 'calibredb-search-mode'emacs)
-    (evil-set-undo-system 'undo-redo)
-    (keymap-set evil-insert-state-map "C-c" 'evil-normal-state)
-    (keymap-unset evil-motion-state-map "<SPC>" t) 
-    (evil-mode 1))
-
-#+end_src
-
- #+RESULTS:
- : t
-** Evil-Collection
-#+begin_src emacs-lisp
-  (use-package evil-collection
-  :after evil
-  :straight t
-  :config
-  (evil-collection-init))
-#+end_src
-
-#+RESULTS:
-: t
+** UPDATE org-goto
 
 * UI
 ** Themes
@@ -642,17 +765,6 @@
   (global-hl-line-mode -1) 
   (hl-line-mode -1)
 #+end_src
-** Dashboard
-#+begin_src emacs-lisp
-  (use-package dashboard
-    :straight t
-    :config
-    (dashboard-setup-startup-hook))
-#+end_src
-
-#+RESULTS:
-: t
-
 * Mail
 ** browse-url-mailto
 #+begin_src emacs-lisp
@@ -714,37 +826,14 @@
 ** Company
 #+begin_src emacs-lisp
   (use-package company
-    :straight t
-    :hook
-    (add-hook 'after-init-hook 'global-company-mode))
-#+end_src
-** corfu
-#+begin_src emacs-lisp
-  (use-package corfu
-    :straight t
-  ;; Optional customizations
-     :custom
-     (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-     (corfu-auto t)                 ;; Enable auto completion
-    ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-    ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
-    ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-    ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
-    ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-
-    ;; Enable Corfu only for certain modes. See also `global-corfu-modes'.
-    ;; :hook ((prog-mode . corfu-mode)
-    ;;        (shell-mode . corfu-mode)
-    ;;        (eshell-mode . corfu-mode))
-
-    ;; Recommended: Enable Corfu globally.  This is recommended since Dabbrev can
-    ;; be used globally (M-/).  See also the customization variable
-    ;; `global-corfu-modes' to exclude certain modes.
-    :init
-    (global-corfu-mode))
+    :config (setq company-idle-delay 0
+  		company-minimum-prefix-length 1
+  		company-tooltip-align-annotations t))
+  (add-hook 'after-init-hook 'global-company-mode)
 #+end_src
 
 #+RESULTS:
+| global-company-mode | org-persist-load-all | tramp-register-archive-autoload-file-name-handler | table--make-cell-map |
 
 * Programming
 ** LISP  
@@ -764,8 +853,8 @@
 #+begin_src emacs-lisp
   (use-package slime
     :straight t
-    :custom
-    (inferior-lisp-program "sbcl"))
+    :config 
+    (setq inferior-lisp-program "sbcl"))
 #+end_src
 
 #+RESULTS:
@@ -786,10 +875,3 @@
 
 #+RESULTS:
 
-* Magit
-#+begin_src emacs-lisp
-  (use-package magit 
-    :straight t)
-#+end_src
-
-#+RESULTS:

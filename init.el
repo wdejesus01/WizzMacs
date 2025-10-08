@@ -83,6 +83,27 @@
 
 (keymap-set global-map "C-c C-h" #'shell)
 
+(use-package evil
+  :straight t
+  :init
+  (setq evil-want-integration t
+	  evil-want-keybinding nil
+	  evil-want-fine-undo t
+	  evil-want-C-w-in-emacs-state t)
+  :config
+  (evil-set-initial-state 'calibredb-show-mode 'emacs)
+  (evil-set-initial-state 'calibredb-search-mode'emacs)
+  (evil-set-undo-system 'undo-redo)
+  (keymap-set evil-insert-state-map "C-c" 'evil-normal-state)
+  (keymap-unset evil-motion-state-map "<SPC>" t) 
+  (evil-mode 1))
+
+(use-package evil-collection
+:after evil
+:straight t
+:config
+(evil-collection-init))
+
 (use-package org
   :defer
   :straight '(org
@@ -117,7 +138,8 @@
   :config
    (setq org-html-validation-link nil org-hide-emphasis-markers t
 	   org-clock-sound "~/android.webm"
-	   org-list-allow-alphabetical t)
+	   org-list-allow-alphabetical t
+	   org-insert-heading-respect-content t)
    (keymap-global-set "C-c l" 'org-store-link)
    (keymap-global-set "C-c a" 'org-agenda)
    (keymap-global-set "C-c c" 'org-capture))
@@ -148,7 +170,7 @@
  (setq org-latex-preview-mode-display-live t)
 
  ;; More immediate live-previews -- the default delay is 1 second
- (setq org-latex-preview-mode-update-delay 0.25))
+ (setq org-latex-preview-mode-update-delay 0.25)
 
 (defun my/org-latex-preview-uncenter (ov)
     (overlay-put ov 'before-string nil))
@@ -181,12 +203,14 @@
       (remove-hook 'org-latex-preview-overlay-update-functions
                     #'my/org-latex-preview-center)
       (remove-hook 'org-latex-preview-overlay-open-functions
-                    #'my/org-latex-preview-uncenter))))
+                    #'my/org-latex-preview-uncenter)))
 
 (evil-define-key 'normal org-mode-map
   (kbd "SPC h") #'org-insert-heading
   (kbd "SPC a h") #'org-insert-heading-after-current
   (kbd "SPC s h") #'org-insert-subheading)
+
+(setq org-goto-interface 'outline-path-completion)
 
 (setq org-todo-keywords
       '((sequence
@@ -223,7 +247,10 @@
 (use-package org-tempo
 :straight '(:type built-in)
 :config
-(setq org-structure-template-alist (append '(("el" .  "src emacs-lisp")) '(("cc" .  "src C")) org-structure-template-alist)))
+(setq org-structure-template-alist (append
+				    '(("el" .  "src emacs-lisp"))
+				    '(("cc" .  "src C"))
+				    '(("L" . "src lisp")) org-structure-template-alist)))
 
 (setq org-refile-allow-creating-parent-nodes 'confirm
       org-refile-use-outline-path 'file
@@ -257,6 +284,14 @@
 (setq org-default-notes-file (expand-file-name "log.org" org-directory)
       org-capture-templates
 	'(("c" "Capture" entry (file "") 
+	   "* ?  %?\n\nCaptured on: %U")
+	  ("e" "Emacs" entry (file "emacs.org")
+	   "* ?  %?\n\nCaptured on: %U")
+	  ;Made at 2:22pm Oct 2nd
+	  ;Template to create entry for a class using org-goto to choose headline
+	  ("s" "School" entry (file+function "school.org"
+					     (lambda () (let ((org-goto-max-level  2)))
+					       (org-goto)))
 	   "* ?  %?\n\nCaptured on: %U")))
 
 (setq org-hidden-keywords '(title)
@@ -273,6 +308,13 @@
                         '(("^ +\\([-*]\\) "
                            (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
+(defadvice org-tree-to-indirect-buffer (before indirect-buffer-prefix-arg
+					       activate compile)
+  (interactive (list (cond ((numberp current-prefix-arg) (if (>= current-prefix-arg 0)
+							     current-prefix-arg))
+			   ((symbolp current-prefix-arg) current-prefix-arg)
+			   ((listp current-prefix-arg) current-prefix-arg)))))
+
 (setq org-log-state-notes-into-drawer "NOTES")
 
 (use-package citar
@@ -280,7 +322,9 @@
   (citar-bibliography '("~/org-roam/biblio.bib"))
   :hook
   (LaTeX-mode . citar-capf-setup)
-  (org-mode . citar-capf-setup))
+  (org-mode . citar-capf-setup)
+  :config
+  (evil-define-key 'normal org-mode-map (kbd "SPC c i k") #'citar-insert-citation))
 
 (use-package org-roam
   :straight  t
@@ -291,26 +335,26 @@
 					 :target (file+head "%<%Y-%m-%d>.org"
 							    "#+title: %<%Y-%m-%d>\n"))))
   (org-roam-capture-templates '(("d" "default" plain "%?" 
-				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}")
+				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}")
 				 :unnarrowed t)
-				("m" "Math" plain (file "~/org-roam/templates/math.org")
-				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :math:")
+				("m" "Math" plain "%?"
+				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :math:")
 				 :unnarrowed t)
-				("c" "computer science" plain (file "~/org-roam/templates/math.org")
-				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :cmpt:")
+				("c" "computer science" plain "%?"
+				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :cmpt:")
 				 :unnarrowed t)
 				("s" "Spanish" plain "%?"
-				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :span:lang:")
+				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :span:lang:")
 				 :unnarrowed t)
 				("l" "Linguistics" plain "%?"
-				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :lang:")
+				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :ling:")
 				 :unnarrowed t)
 				("e" "Emacs Related")
 				("ee" "Emacs" plain "%?"
-                                 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :emacs:")
+                                 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :emacs:")
 				 :unnarrowed t)
 				("el" "Elisp" plain "%?"
-				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :emacs:lisp:")
+				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :emacs:lisp:")
 				 :unnarrowed t)))
   :bind (("C-c n l" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
@@ -358,38 +402,21 @@
                          :node (org-roam-node-create :title (citar-get-value 'title citeKey))
                          :props '(:finalize find-file ))))
 
+(evil-global-set-key 'normal (kbd "C-c n r") #'wiz/org-roam-node-from-cite)
+
 (use-package auctex
 :straight t)
 
 (use-package org-download
   :straight t
   :config
-  (add-hook 'dired-mode-hook 'org-download-enable))
+  (add-hook 'dired-mode-hook 'org-download-enable)
+  (setq org-download-screenshot-method "screencapture -i %s"
+  org-download-image-dir "images"))
 
 (evil-define-key 'normal org-mode-map (kbd "SPC SPC") #'org-download-screenshot)
 
 (directory-files org-directory)
-
-(use-package evil
-  :straight t
-  :init
-  (setq evil-want-integration t
-	  evil-want-keybinding nil
-	  evil-want-fine-undo t
-	  evil-want-C-w-in-emacs-state t)
-  :config
-  (evil-set-initial-state 'calibredb-show-mode 'emacs)
-  (evil-set-initial-state 'calibredb-search-mode'emacs)
-  (evil-set-undo-system 'undo-redo)
-  (keymap-set evil-insert-state-map "C-c" 'evil-normal-state)
-  (keymap-unset evil-motion-state-map "<SPC>" t) 
-  (evil-mode 1))
-
-(use-package evil-collection
-:after evil
-:straight t
-:config
-(evil-collection-init))
 
 (use-package doom-themes
   :straight t
@@ -426,11 +453,6 @@
 (global-hl-line-mode -1) 
 (hl-line-mode -1)
 
-(use-package dashboard
-  :straight t
-  :config
-  (dashboard-setup-startup-hook))
-
 (setq browse-url-mailto-function 'browse-url-generic)
 (setq browse-url-generic-program "open")
 
@@ -465,32 +487,10 @@
 (global-flycheck-mode)
 
 (use-package company
-  :straight t
-  :hook
-  (add-hook 'after-init-hook 'global-company-mode))
-
-(use-package corfu
-  :straight t
-;; Optional customizations
-   :custom
-   (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-   (corfu-auto t)                 ;; Enable auto completion
-  ;; (corfu-quit-at-boundary nil)   ;; Never quit at completion boundary
-  ;; (corfu-quit-no-match nil)      ;; Never quit, even if there is no match
-  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-  ;; (corfu-preselect 'prompt)      ;; Preselect the prompt
-  ;; (corfu-on-exact-match nil)     ;; Configure handling of exact matches
-
-  ;; Enable Corfu only for certain modes. See also `global-corfu-modes'.
-  ;; :hook ((prog-mode . corfu-mode)
-  ;;        (shell-mode . corfu-mode)
-  ;;        (eshell-mode . corfu-mode))
-
-  ;; Recommended: Enable Corfu globally.  This is recommended since Dabbrev can
-  ;; be used globally (M-/).  See also the customization variable
-  ;; `global-corfu-modes' to exclude certain modes.
-  :init
-  (global-corfu-mode))
+  :config (setq company-idle-delay 0
+		company-minimum-prefix-length 1
+		company-tooltip-align-annotations t))
+(add-hook 'after-init-hook 'global-company-mode)
 
 (use-package geiser
   :straight t
@@ -502,15 +502,12 @@
 
 (use-package slime
   :straight t
-  :custom
-  (inferior-lisp-program "sbcl"))
+  :config 
+  (setq inferior-lisp-program "sbcl"))
 
 (use-package eglot
   :straight (:type built-in)
   :hook ((python-mode . eglot-ensure)))
 
 (use-package treemacs
-  :straight t)
-
-(use-package magit 
   :straight t)
