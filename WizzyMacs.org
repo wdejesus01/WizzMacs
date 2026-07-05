@@ -1,8 +1,10 @@
 #+TITLE:Welcome to the wonderful world of wizardry
 #+PROPERTY: header-args:emacs-lisp :tangle ./init.el
-#+SEQ_TODO: UPDATE "|" 
 * General Setting
 ** User-Settings
+:PROPERTIES:
+:ID:       174C9835-6E89-4584-BF21-D2C94B524B67
+:END:
 #+begin_src emacs-lisp
   (setq inhibit-startup-message t); Removes starting page
 
@@ -35,6 +37,9 @@
 : ((undecorated . t) (vertical-scroll-bars))
 
 ** Global Minor modes
+:PROPERTIES:
+:ID:       FEBDA81A-5682-4AE0-8751-E5ECD09C39EB
+:END:
 #+begin_src emacs-lisp
   (global-auto-revert-mode 1);If file has changed, auto loads changes
   (recentf-mode 1); loads recent files that you have edited
@@ -44,6 +49,9 @@
   (save-place-mode 1) ; Saves and restores last location of file
 #+end_src
 ** Buffers
+:PROPERTIES:
+:ID:       F6B32097-82B8-404C-B86B-FA3933B524FB
+:END:
 #+begin_src emacs-lisp
   (keymap-global-set "C-x C-b" 'buffer-menu)
   (add-to-list 'global-auto-revert-ignore-modes 'Buffer-menu-mode)
@@ -52,6 +60,9 @@
 #+RESULTS:
 | Buffer-menu-mode |
 ** Registers
+:PROPERTIES:
+:ID:       78BC0D01-4F7F-4AC4-8A43-490D042AF5EA
+:END:
 #+begin_src emacs-lisp
   (set-register ?h '(file . "~/"))
   (set-register ?e '(file . "~/.emacs.d/"))
@@ -62,7 +73,21 @@
 
 #+RESULTS:
 : (file . ~/org/College/)
+*** Bookmarks 
+:PROPERTIES:
+:ID:       15924138-BC88-4206-81A4-936D45A7C2A3
+:END:
+#+begin_src emacs-lisp
+  (setq bookmark-save-flag 1)
+#+end_src
+
+#+RESULTS:
+: 1
+
 ** Find Sudo-File
+:PROPERTIES:
+:ID:       C3578062-D5A5-4120-882D-9C17DF95139C
+:END:
 #+begin_src emacs-lisp
 (defun sudo-find-file (file-name)
   "Like find file, but opens the file as root."
@@ -71,14 +96,25 @@
     (find-file tramp-file-name)))
 #+end_src
 ** Info
+:PROPERTIES:
+:ID:       6FF29C05-94DC-4A76-8507-4582AFFF1DE7
+:END:
+:NOTES:
+- Note taken on [2025-10-26 Sun 13:04] \\
+  Need to update such that System info path = emacs info path
+:END:
 #+begin_src emacs-lisp
-  (add-to-list 'Info-default-directory-list "~/.emacs.d/info/") 
+;  (setq Info-default-directory-list (append Info-default-directory-list "~/.emacs.d/info/"
+;  (string-trim (shell-command-to-string "echo $INFOPATH") "[ \t\n\r]+" "[ \t\n\r:]+")))
 #+end_src
 
 #+RESULTS:
-| ~/.emacs.d/info/ |
+| /opt/homebrew/share/info | ~/.emacs.d/info/ |
 
 ** Straight.el
+:PROPERTIES:
+:ID:       C7B290DF-E922-4CBE-BCDE-535CA8AFC80D
+:END:
 #+begin_src emacs-lisp
   
   (defvar bootstrap-version)
@@ -99,20 +135,35 @@
   (setq straight-use-package-by-default t)
 #+end_src
 ** No-Littering
+:PROPERTIES:
+:ID:       FECDD863-3A41-41A4-ADAD-7BE4B9A914A5
+:END:
 #+begin_src emacs-lisp
   (use-package no-littering
   :straight t)
   (no-littering-theme-backups)
 #+end_src
 ** exec-path-from-shell
+:PROPERTIES:
+:ID:       FBCD02AB-5B82-4FE7-A7EC-AD997AB8A9DD
+:END:
 #+begin_src emacs-lisp
   (use-package exec-path-from-shell
-    :straight t)
-  (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize))
+    :straight t
+    :config
+    (add-to-list 'exec-path-from-shell-variables "INFOPATH") 
+    (when (memq window-system '(mac ns x))
+      (exec-path-from-shell-initialize)))
 #+end_src
+
+#+RESULTS:
+: t
+
 ** Window Management
 *** Tabs 
+:PROPERTIES:
+:ID:       724A71D0-FEC8-46B3-B43E-28717126B765
+:END:
 #+begin_src emacs-lisp
   (setq tab-bar-show 1)
 #+end_src
@@ -121,30 +172,58 @@
 : 1
 
 *** Frames
+:PROPERTIES:
+:ID:       1A24C669-F361-4663-B4AF-50982363DADA
+:END:
 #+begin_src emacs-lisp
   (keymap-global-set "C-x 5 w" 'set-frame-width)
   (keymap-global-set "C-x 5 h" 'set-frame-height)
 #+end_src
 *** Fullscreen
+:PROPERTIES:
+:ID:       55708166-1CED-4452-91D8-BDB396515D76
+:END:
 #+begin_src emacs-lisp
   (define-key global-map (kbd "<f1>") #'toggle-frame-fullscreen)
 #+end_src
-* Shell
+** minibuffer 
+:PROPERTIES:
+:ID:       C5366834-FAD6-4BED-8571-FDFB5FF42CED
+:END:
 #+begin_src emacs-lisp
-  (keymap-set global-map "C-c C-h" #'shell)
+  ;; Appeneded Oct/15/25 6:08PM
+  (minibuffer-electric-default-mode) ; Alters default arguement behaviour in minibuffer
 #+end_src
+
+* Stuff
+:PROPERTIES:
+:ID:       29E66BE7-9845-4A8C-BCD1-59261923690D
+:END:
+#+begin_src emacs-lisp
+  (use-package straight
+  :custom
+  ;; add project and flymake to the pseudo-packages variable so straight.el doesn't download a separate version than what eglot downloads.
+  (straight-built-in-pseudo-packages '(emacs nadvice python image-mode project flymake))
+  (straight-use-package-by-default t))
+#+end_src
+
+#+RESULTS:
+
 * Evil
+:PROPERTIES:
+:ID:       715852F7-5EC4-4E5C-B853-BD017FA95E1D
+:END:
 #+begin_src emacs-lisp
   (use-package evil
     :straight t
+    :custom
+    (evil-want-minibuffer t)
     :init
     (setq evil-want-integration t
   	  evil-want-keybinding nil
   	  evil-want-fine-undo t
   	  evil-want-C-w-in-emacs-state t)
     :config
-    (evil-set-initial-state 'calibredb-show-mode 'emacs)
-    (evil-set-initial-state 'calibredb-search-mode'emacs)
     (evil-set-undo-system 'undo-redo)
     (keymap-set evil-insert-state-map "C-c" 'evil-normal-state)
     (keymap-unset evil-motion-state-map "<SPC>" t) 
@@ -155,6 +234,9 @@
  #+RESULTS:
  : t
 ** Evil-Collection
+:PROPERTIES:
+:ID:       60166E67-C096-481E-9034-9BC1D1199E99
+:END:
 #+begin_src emacs-lisp
   (use-package evil-collection
   :after evil
@@ -165,14 +247,29 @@
 
 #+RESULTS:
 : t
+* Completion ** Vertico :PROPERTIES: :ID:       4E6C1458-9F1A-4EDE-A55E-1E3E2BC90F07 :END: #+begin_src emacs-lisp (use-package vertico :straight t :config (vertico-mode 1)) #+end_src #+RESULTS: : t ** Marginalia :PROPERTIES: :ID:       755B8FC6-B576-4B24-809F-4A0025A1BF26 :END: #+begin_src emacs-lisp (use-package marginalia :after vertico :straight t :config (marginalia-mode 1)) #+end_src #+RESULTS: : t ** Savehist :PROPERTIES: :ID:       E535245B-DD32-4058-8876-54B6D2B1A947 :END: #+begin_src emacs-lisp (use-package savehist :config (savehist-mode)) #+end_src #+RESULTS: : t ** Which-Key :PROPERTIES: :ID:       B53ECA0E-FC46-44C2-9ED7-A9E4CE5380FF :END: #+begin_src emacs-lisp (use-package which-key :straight t :config (which-key-mode)) #+end_src ** Orderless :PROPERTIES: :ID:       79EAD23D-085F-4304-A29A-FD63131D659D :END: #+begin_src emacs-lisp (use-package orderless :straight t :custom (completion-styles '(orderless basic)) (completion-category-overrides '((file (styles basic partial-completion))))) #+end_src #+RESULTS: ** Flycheck :PROPERTIES: :ID:       14688A7E-F968-4CA3-BED3-73CD4210DA79 :END: #+begin_src emacs-lisp (use-package flycheck :straight t) (global-flycheck-mode) #+end_src ** Company :PROPERTIES: :ID:       51274AA8-C7AC-44BE-9722-D26AA360BD99 :END: #+begin_src emacs-lisp (use-package company :config (setq company-idle-delay 0 company-minimum-prefix-length 1 company-tooltip-align-annotations t)) (add-hook 'after-init-hook 'global-company-mode) #+end_src #+RESULTS: | global-company-mode | org-persist-load-all | tramp-register-archive-autoload-file-name-handler | table--make-cell-map |
+* Ispell
+:PROPERTIES:
+:ID:       25921EFB-FFA1-479B-9FDA-EB769911320F
+:END:
+#+begin_src emacs-lisp
+  ;;; Added 10/09/25 6:50AM
+  ;;; Set ispell program to hunspell
+  (setq ispell-program-name (string-trim (shell-command-to-string "which hunspell")))
+#+end_src
+
+#+RESULTS:
+: /opt/homebrew/bin/hunspell
 
 * Org
-** Org-Mode
+:PROPERTIES:
+:ID:       84AC8A6E-8ECE-48E2-AC8B-E0311CDF4AAF
+:END:
 #+begin_src emacs-lisp
   (use-package org
     :defer
     :straight '(org
-                :fork (:host nil
+  	      :fork (:host nil
                        :repo "https://git.tecosaur.net/tec/org-mode.git"
                        :branch "dev"
                        :remote "tecosaur")
@@ -200,11 +297,15 @@
   	      ("C-c C-|" . org-table-insert-column)
   	      ("C-c C-x i" . org-id-get-create))
     :hook (org-mode . flyspell-mode)
+    :custom
+    (org-directory "~/org/agenda")
+    (org-id-link-to-org-use-id  t)
+    (org-attach-method 'lns)
+    (org-attach-id-dir "refs")
+    (org-archive-location "archive/%s_archive::")
     :config
      (setq org-html-validation-link nil org-hide-emphasis-markers t
-  	   org-clock-sound "~/android.webm"
-  	   org-list-allow-alphabetical t
-  	   org-insert-heading-respect-content t)
+  	   org-list-allow-alphabetical t)
      (keymap-global-set "C-c l" 'org-store-link)
      (keymap-global-set "C-c a" 'org-agenda)
      (keymap-global-set "C-c c" 'org-capture))
@@ -212,7 +313,10 @@
 #+end_src
 #+RESULTS:
 : org-id-get-create
-*** UPDATE org-latex-preview
+** org-latex-preview
+:PROPERTIES:
+:ID:       B13123CC-8EB3-45FA-9CE3-45ECDBA1B6F0
+:END:
 #+begin_src emacs-lisp
  ;; Increase preview width
   (plist-put org-latex-preview-appearance-options
@@ -245,7 +349,10 @@
 
 #+RESULTS:
 : 0.25
-**** org-latex-preview-center
+*** org-latex-preview-center
+:PROPERTIES:
+:ID:       3F3ED5BD-A254-4F02-A5C6-122084640B18
+:END:
 #+begin_src emacs-lisp
 (defun my/org-latex-preview-uncenter (ov)
     (overlay-put ov 'before-string nil))
@@ -283,7 +390,10 @@
 
 #+RESULTS:
 
-*** Keys
+** Keys
+:PROPERTIES:
+:ID:       5D383210-D8F1-4239-AACA-645AAEA68CF6
+:END:
 #+begin_src emacs-lisp
   (evil-define-key 'normal org-mode-map
     (kbd "SPC h") #'org-insert-heading
@@ -293,45 +403,38 @@
 
 #+RESULTS:
 
-*** org-goto
-#+begin_src emacs-lisp
-  (setq org-goto-interface 'outline-path-completion)
-#+end_src
-
-#+RESULTS:
-: outline-path-completion
-
-*** TODO
+** todo-keywords
+:PROPERTIES:
+:ID:       E16BD9C2-B760-4FB7-B803-374A06CDAED3
+:END:
 #+begin_src emacs-lisp
   (setq org-todo-keywords
         '((sequence
-  	 "TODO(t)" ;To be done
-  	 "HOLD(H)" ;In hiatus
+  	 "TODO(T)" 
+  	 "BUY((B)"
+  	 "HOLD(H)" 
   	 "?(?)" ;To be Considered
   	 "|"
-  	 "DONE(D)" ;Done 
-  	 "VOID(V)" ;Rendered Void
+  	 "DONE(D)"
+  	 "VOID(V)" 
   	)
+  	;;; Damn you english phonetics
   	(sequence
-  	 "READ(r)" ;To be read
-  	 "|" 
-  	 )
-  	(sequence
-  	 "BUY(b)" ;To be bought
+  	 "TOREAD(r)"
+  	 "READING"
   	 "|"
-  	 "BOUGHT(B)" 
+  	 "READ(R)"
   	 )
   	(sequence
-  	"FIX(f)" ;Not functioning as intended
-  	"|"
-  	"FIXED(F)"
-  	))
+  	 "LISTEN(l)"
+  	 "LISTENED(L)"))
+
         org-tag-alist ;Controlled Vocabulary of tags
         '(("emacs" . ?e);Prima Facie(Self-evident)
   	("info" . ?i) ;Information about Information
   	("cmpt" . ?c) ;Computers & their sciences
   	)
-        org-fast-tag-selection-single-key 'nil) ;C-u once to show selection,twice to remove single-key-exit
+        org-fast-tag-selection-single-key t) ;C-u once to show selection,twice to remove single-key-exit
         
 
   	 
@@ -339,29 +442,39 @@
 #+end_src
 
 #+RESULTS:
-*** org-archive
-#+begin_src emacs-lisp
-  (setq org-archive-location "archive/%s::") ;;Store items in archive files in seperate archive directory
-#+end_src
-
-#+RESULTS:
-: archive/%s::
-
-*** UPDATE Org-Tempo
+: t
+** Org-Tempo
+:PROPERTIES:
+:ID:       FD73FAD8-8D68-48AC-8E35-EFF2DCE85C9F
+:END:
 #+BEGIN_SRC emacs-lisp
   (use-package org-tempo
   :straight '(:type built-in)
   :config
-  (setq org-structure-template-alist (append
-  				    '(("el" .  "src emacs-lisp"))
-  				    '(("cc" .  "src C"))
-  				    '(("L" . "src lisp")) org-structure-template-alist)))
+  (dolist (template '(("el" .  "src emacs-lisp")
+  		    ("x" .  "src C")
+  		    ("lp" . "src lisp"))) 
+    (add-to-list 'org-structure-template-alist template)))
 #+END_SRC
 
 #+RESULTS:
 : t
 
-*** org-refile
+** org-goto
+:PROPERTIES:
+:ID:       4E040161-331A-4955-9F0A-16A1AF7995C4
+:END:
+#+begin_src emacs-lisp
+  (setq org-goto-interface 'outline-path-completion)
+#+end_src
+
+#+RESULTS:
+: outline-path-completion
+
+** org-refile
+:PROPERTIES:
+:ID:       C878BDF2-B1E8-45EE-80F3-C6B1ED4F6199
+:END:
 [[https://blog.aaronbieber.com/2017/03/19/organizing-notes-with-refile.html][Inspiration]]
 #+begin_src emacs-lisp
   (setq org-refile-allow-creating-parent-nodes 'confirm
@@ -375,8 +488,11 @@
 #+RESULTS:
 : ((org-agenda-files :maxlevel . 2) (nil :maxlevel . 3))
 
-*** Org-Babel
-**** Languages
+** Org-Babel
+*** Languages
+:PROPERTIES:
+:ID:       915EF143-DCCB-4523-A984-4E71CDEF6961
+:END:
 #+BEGIN_SRC emacs-lisp
       ;;select languages for bable
     (org-babel-do-load-languages
@@ -397,7 +513,10 @@
 
 #+RESULTS:
 
-**** Tangle
+*** Tangle
+:PROPERTIES:
+:ID:       FC607CCA-D32B-466B-BA4E-0B56847DAF6D
+:END:
 #+BEGIN_SRC emacs-lisp
   (defun efs/org-babel-tangle-config()
   (when(string-equal (buffer-file-name)
@@ -413,27 +532,31 @@
 #+RESULTS:
 | #[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] | (lambda nil (add-hook 'after-save-hook #'efs/org-babel-tangle-config)) | org-tempo-setup | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] | #[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] | org-babel-result-hide-spec | org-babel-hide-all-hashes | flyspell-mode |
 
-*** Org-Capture
+** Org-Capture
+:PROPERTIES:
+:ID:       71885157-9842-4CC6-A052-57804E3D8428
+:END:
 - For help with templates go [[info:org#Capture templates][here]] 
 #+begin_src emacs-lisp
   (setq org-default-notes-file (expand-file-name "log.org" org-directory)
         org-capture-templates
   	'(("c" "Capture" entry (file "") 
-  	   "* ?  %?\n\nCaptured on: %U")
-  	  ("e" "Emacs" entry (file "emacs.org")
-  	   "* ?  %?\n\nCaptured on: %U")
+  	   "* ?  %?\n")
   	  ;Made at 2:22pm Oct 2nd
   	  ;Template to create entry for a class using org-goto to choose headline
   	  ("s" "School" entry (file+function "school.org"
   					     (lambda () (let ((org-goto-max-level  2)))
   					       (org-goto)))
-  	   "* ?  %?\n\nCaptured on: %U")))
+  	   "* ?  %?\n")))
   							   
   	   
 #+end_src
 
 #+RESULTS:
-| c | Capture | entry | (file ) | * ?  %? |
+| c | Capture | entry | (file )                                                                           | * ?  %? |
+| s | School  | entry | (file+function school.org (lambda nil (let ((org-goto-max-level 2))) (org-goto))) | * ?  %? |
+
+Captured on: %U |
 
 Captured on: %U |
 | e | Emacs | entry | (file emacs.org) | * ?  %? |
@@ -503,8 +626,11 @@ Captured on: %U |
 
 Captured on: %U |
 
-*** Appearence
-**** org-Settings
+** Appearence
+*** org-Settings
+:PROPERTIES:
+:ID:       2F5483AF-0E96-4A2A-83E0-38076C2F347B
+:END:
 #+BEGIN_SRC emacs-lisp
   (setq org-hidden-keywords '(title)
         org-startup-indented t
@@ -513,8 +639,10 @@ Captured on: %U |
 #+END_SRC
 
 #+RESULTS:
-: t
-**** Org-Bullets
+*** Org-Bullets
+:PROPERTIES:
+:ID:       4BF2CB1D-DA41-4DB6-95FA-9F59248E5259
+:END:
 #+begin_src emacs-lisp
   (use-package org-bullets
     :straight t
@@ -524,213 +652,20 @@ Captured on: %U |
 
 #+RESULTS:
 : t
-**** Better list-bullets
-#+begin_src emacs-lisp
-(font-lock-add-keywords 'org-mode
-                        '(("^ +\\([-*]\\) "
-                           (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-#+end_src
-
-#+RESULTS:
-
-*** Org-agenda
-
-#+RESULTS:
-: org-agenda-undo
-
-*** UPDATE org-tree-to-indirect-buffer
-#+begin_src emacs-lisp
-  (defadvice org-tree-to-indirect-buffer (before indirect-buffer-prefix-arg
-  					       activate compile)
-    (interactive (list (cond ((numberp current-prefix-arg) (if (>= current-prefix-arg 0)
-  							     current-prefix-arg))
-  			   ((symbolp current-prefix-arg) current-prefix-arg)
-  			   ((listp current-prefix-arg) current-prefix-arg)))))
-#+end_src
-
-#+RESULTS:
-: org-tree-to-indirect-buffer
-
-*** Notes
-#+begin_src emacs-lisp
-  (setq org-log-state-notes-into-drawer "NOTES")
-#+end_src
-** Citar
-#+begin_src emacs-lisp
-  (use-package citar
-    :custom
-    (citar-bibliography '("~/org-roam/biblio.bib"))
-    :hook
-    (LaTeX-mode . citar-capf-setup)
-    (org-mode . citar-capf-setup)
-    :config
-    (evil-define-key 'normal org-mode-map (kbd "SPC c i k") #'citar-insert-citation))
-#+end_src
-
-#+RESULTS:
-| #[0 \305\306	>\203 \307 |
-\310\311#\210\307\312\313#\210\307\314\315#\210\306	>\203, \307
-\316\317#\210\307
-\320\321#\210\322	>\203> \307\323\324#\210\307\325\324#\210\326	>\203P \307
-\327\317#\210\307
-\330\321#\210\331	>\203_ \332\311\333BC\334#\210\335	>\203k \332\311\336\334#\210\337	>\203w \332\311\340\334#\210\341\342\343\344#\207 [org-mouse-context-menu-function org-mouse-features org-mouse-map org-mode-map org-outline-regexp-bol org-mouse-context-menu context-menu org-defkey [mouse-3] nil [mouse-3] org-mouse-show-context-menu [down-mouse-1] org-mouse-down-mouse [C-drag-mouse-1] org-mouse-move-tree [C-down-mouse-1] org-mouse-move-tree-start yank-link [S-mouse-2] org-mouse-yank-link [drag-mouse-3] move-tree [drag-mouse-3] [down-mouse-3] activate-stars font-lock-add-keywords (0 `(face org-link mouse-face highlight keymap ,org-mouse-map) 'prepend) t activate-bullets ((^[ 	]*\([-+*]\|[0-9]+[.)]\) + (1 `(face org-link keymap ,org-mouse-map mouse-face highlight) 'prepend))) activate-checkboxes ((^[ 	]*\(?:[-+*]\|[0-9]+[.)]\)[ 	]+\(?:\[@\(?:start:\)?[0-9]+\][ 	]*\)?\(\[[- X]\]\) (1 `(face nil keymap ,org-mouse-map mouse-face highlight) prepend))) advice-add org-open-at-point :around org--mouse-open-at-point] 4] |#[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] |citar-capf-setup |#[nil ((org-bullets-mode t)) nil] |#[nil ((add-hook 'after-save-hook #'efs/org-babel-tangle-config)) nil] |org-tempo-setup |org-latex-preview-mode |flyspell-mode |org-latex-preview--clear-preamble-cache |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] |org-babel-result-hide-spec |org-babel-hide-all-hashes |
-\310\311#\210\307\312\313#\210\307\314\315#\210\306	>\203, \307
-\316\317#\210\307
-\320\321#\210\322	>\203> \307\323\324#\210\307\325\324#\210\326	>\203P \307
-\327\317#\210\307
-\330\321#\210\331	>\203_ \332\311\333BC\334#\210\335	>\203k \332\311\336\334#\210\337	>\203w \332\311\340\334#\210\341\342\343\344#\207 [org-mouse-context-menu-function org-mouse-features org-mouse-map org-mode-map org-outline-regexp-bol org-mouse-context-menu context-menu org-defkey [mouse-3] nil [mouse-3] org-mouse-show-context-menu [down-mouse-1] org-mouse-down-mouse [C-drag-mouse-1] org-mouse-move-tree [C-down-mouse-1] org-mouse-move-tree-start yank-link [S-mouse-2] org-mouse-yank-link [drag-mouse-3] move-tree [drag-mouse-3] [down-mouse-3] activate-stars font-lock-add-keywords (0 `(face org-link mouse-face highlight keymap ,org-mouse-map) 'prepend) t activate-bullets ((^[ 	]*\([-+*]\|[0-9]+[.)]\) + (1 `(face org-link keymap ,org-mouse-map mouse-face highlight) 'prepend))) activate-checkboxes ((^[ 	]*\(?:[-+*]\|[0-9]+[.)]\)[ 	]+\(?:\[@\(?:start:\)?[0-9]+\][ 	]*\)?\(\[[- X]\]\) (1 `(face nil keymap ,org-mouse-map mouse-face highlight) prepend))) advice-add org-open-at-point :around org--mouse-open-at-point] 4] |#[0 \301\211\207 [imenu-create-index-function org-imenu-get-tree] 2] |citar-capf-setup |#[nil ((org-bullets-mode t)) nil] |#[nil ((add-hook 'after-save-hook #'efs/org-babel-tangle-config)) nil] |org-tempo-setup |org-latex-preview-mode |flyspell-mode |org-latex-preview--clear-preamble-cache |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-fold-show-all append local] 5] |#[0 \300\301\302\303\304$\207 [add-hook change-major-mode-hook org-babel-show-result-all append local] 5] |org-babel-result-hide-spec |org-babel-hide-all-hashes |
-
-** Org-Roam
-#+begin_src emacs-lisp
-  (use-package org-roam
-    :straight  t
-    :demand t
-    :custom
-    (org-roam-directory (file-truename "~/org-roam"))
-    (org-roam-dailies-capture-templates '(("d" "default" entry "%?"
-  					 :target (file+head "%<%Y-%m-%d>.org"
-  							    "#+title: %<%Y-%m-%d>\n"))))
-    (org-roam-capture-templates '(("d" "default" plain "%?" 
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}")
-  				 :unnarrowed t)
-  				("m" "Math" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :math:")
-  				 :unnarrowed t)
-  				("c" "computer science" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :cmpt:")
-  				 :unnarrowed t)
-  				("s" "Spanish" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :span:lang:")
-  				 :unnarrowed t)
-  				("l" "Linguistics" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :ling:")
-  				 :unnarrowed t)
-  				("e" "Emacs Related")
-  				("ee" "Emacs" plain "%?"
-                                   :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :emacs:")
-  				 :unnarrowed t)
-  				("el" "Elisp" plain "%?"
-  				 :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+TITLE:${title}\n#+FILETAGS: :emacs:lisp:")
-  				 :unnarrowed t)))
-    :bind (("C-c n l" . org-roam-buffer-toggle)
-           ("C-c n f" . org-roam-node-find)
-           ("C-c n g" . org-roam-graph)
-           ("C-c n i" . org-roam-node-insert)
-           ("C-c n c" . org-roam-capture)
-  	 ("C-c n t" . org-roam-dailies-capture-today)
-  	 ("C-c n C-t" . org-roam-dailies-goto-today)
-  	 ("C-c n p" . org-roam-dailies-goto-previous-note)
-  	 ("C-c n n" . org-roam-dailies-goto-next-note)) 
-    :config
-    ;; If you're using a vertical completion framework, you might want a more informative completion interface
-    (setq org-roam-node-display-template
-  	(concat "${title:*} " (propertize "${tags:10}" 'face 'org-tag))
-  	org-roam-dailies-directory
-  	(expand-file-name "daily" org-roam-directory))
-    (org-roam-db-autosync-mode)
-      (cl-defmethod org-roam-node-type ((node org-roam-node))
-      "Return the TYPE of NODE."
-      (condition-case nil
-          (file-name-nondirectory
-           (directory-file-name
-            (file-name-directory
-             (file-relative-name (org-roam-node-file node) org-roam-directory))))
-        (error "")))
-
-      (setq org-roam-node-display-template
-    	(concat "${type:15} ${title:*} " (propertize "${tags:10}" 'face 'org-tag))
-    	org-roam-dailies-directory
-    	(expand-file-name "daily" org-roam-directory))
-      (org-roam-db-autosync-mode)
-
-    (defun wiz/org-roam-node-from-cite (citeKey)
-      (interactive (list (citar-select-ref)))
-        (org-roam-capture- :templates
-                           '(("r" "reference" plain "%?" :if-new
-                              (file+head "reference/${title}.org"
-                                         ":PROPERTIES:
-  :ROAM_REFS: [cite:@${citekey}]
-  :END:
-  ,#+title: ${title}\n")
-                              :immediate-finish t
-                              :unnarrowed t))
-                           :info (list :citekey citeKey) ;; Passes plist to info
-                           :node (org-roam-node-create :title (citar-get-value 'title citeKey))
-                           :props '(:finalize find-file ))))
-
-#+end_src
-#+RESULTS:
-: org-roam-dailies-goto-next-note
-*** Keys
-#+begin_src emacs-lisp
-  (evil-global-set-key 'normal (kbd "C-c n r") #'wiz/org-roam-node-from-cite)
-#+end_src
-
-#+RESULTS:
-: wiz/org-roam-node-from-cite
-
-** Auctex 
-#+begin_src emacs-lisp
-  (use-package auctex
-  :straight t)
-#+end_src
-** Org-Download
-#+begin_src emacs-lisp
-    (use-package org-download
-      :straight t
-      :config
-      (add-hook 'dired-mode-hook 'org-download-enable)
-      (setq org-download-screenshot-method "screencapture -i %s"
-      org-download-image-dir "images"))
-#+end_src
-
-#+RESULTS:
-: t
-*** Keys 
-#+begin_src emacs-lisp
-  (evil-define-key 'normal org-mode-map (kbd "SPC SPC") #'org-download-screenshot) 
-#+end_src
-
-#+RESULTS:
-
-** org-directory 
-#+begin_src emacs-lisp
-  (directory-files org-directory)
-#+end_src
-
-#+RESULTS:
-| . | .. | .DS_Store | .stfolder | College | archive | cleaning.org | emacs.org | life.org | log.org | nyc.org | pegs.org | read.org | recipe.org | school.org | shop.org | spring25 | vinaya.org | writing.org |
-** UPDATE org-goto
-
 * UI
 ** Themes
-*** Doom Themes
-#+begin_src emacs-lisp
-  (use-package doom-themes
-    :straight t
-    :config
-    (setq doom-themes-enable-bold t   ; if nil, bold is universally disabled
-  	doom-themes-enable-italic t)
-    ) ; if nil, italics is universally disabled
-  
-  
-
-
-#+end_src
-
-#+RESULTS:
-: t
-*** cherry-blossom
-#+begin_src emacs-lisp
-  (use-package cherry-blossom-theme
-    :straight t)
-#+end_src
 *** Tao
+:PROPERTIES:
+:ID:       0EE4712C-1AD7-4BE6-A016-396E6D3679C9
+:END:
 #+begin_src emacs-lisp
   (use-package tao-theme
     :straight t)
 #+end_src
 *** Spacemacs
+:PROPERTIES:
+:ID:       40B9C9AF-C998-4C6D-8EDE-F3BD203F1F3E
+:END:
 #+begin_src emacs-lisp
   (use-package spacemacs-theme
     :straight t)
@@ -739,26 +674,16 @@ Captured on: %U |
 #+RESULTS:
 
 *** Theme Selection
+:PROPERTIES:
+:ID:       F67D48A2-A18F-49D0-A4B5-007952F07855
+:END:
 #+begin_src emacs-lisp
 (load-theme 'spacemacs-dark) 
 #+end_src
-** Nerd-Icons
-#+begin_src emacs-lisp
-  (use-package nerd-icons
-    :straight t
-    ;; :custom
-    ;; The Nerd Font you want to use in GUI
-    ;; "Symbols Nerd Font Mono" is the default and is recommended
-    ;; but you can use any other Nerd Font if you want
-    ;;   (nerd-icons-font-family "Symbols Nerd Font Mono")
-    )
-#+end_src
-** All The Icons
-#+begin_src emacs-lisp
-    (use-package all-the-icons
-    :straight t)
-#+end_src
 ** Text 
+:PROPERTIES:
+:ID:       33BB2C5E-EDE6-4F13-BD97-739DF7FC2E84
+:END:
 #+begin_src emacs-lisp
   (set-face-attribute 'default nil :height 150)
   (set-frame-font "JetBrains Mono" nil t)
@@ -766,7 +691,13 @@ Captured on: %U |
   (hl-line-mode -1)
 #+end_src
 * Mail
+:PROPERTIES:
+:ID:       F227300E-0441-4C08-AD01-98933272227D
+:END:
 ** browse-url-mailto
+:PROPERTIES:
+:ID:       AA62AFCC-EA69-45F8-9F42-A6AC874C6D43
+:END:
 #+begin_src emacs-lisp
   (setq browse-url-mailto-function 'browse-url-generic)
   (setq browse-url-generic-program "open")
@@ -775,69 +706,12 @@ Captured on: %U |
 #+RESULTS:
 : open
 
-* Completion
-** Vertico
-#+begin_src emacs-lisp
-  (use-package vertico
-    :straight t
-    :config
-    (vertico-mode 1))
-#+end_src
-
-#+RESULTS:
-: t
-
-** Marginalia
-#+begin_src emacs-lisp
-  (use-package marginalia
-    :after vertico
-    :straight t
-    :config
-    (marginalia-mode 1))
-
-#+end_src
-** Savehist
-#+begin_src emacs-lisp
-  (use-package savehist
-    :config
-    (savehist-mode))
-#+end_src
-** Which-Key
-#+begin_src emacs-lisp
-  (use-package which-key
-    :straight t 
-    :config
-    (which-key-mode))
-#+end_src
-** Orderless
-#+begin_src emacs-lisp
-  (use-package orderless
-    :straight t
-    :custom
-    (completion-styles '(orderless basic))
-    (completion-category-overrides '((file (styles basic partial-completion)))))
-#+end_src
-** Flycheck
-#+begin_src emacs-lisp
-  (use-package flycheck
-    :straight t)
-  (global-flycheck-mode)
-#+end_src
-** Company
-#+begin_src emacs-lisp
-  (use-package company
-    :config (setq company-idle-delay 0
-  		company-minimum-prefix-length 1
-  		company-tooltip-align-annotations t))
-  (add-hook 'after-init-hook 'global-company-mode)
-#+end_src
-
-#+RESULTS:
-| global-company-mode | org-persist-load-all | tramp-register-archive-autoload-file-name-handler | table--make-cell-map |
-
 * Programming
 ** LISP  
 *** Geiser
+:PROPERTIES:
+:ID:       50059CE5-3014-4625-A097-6831F68DECCB
+:END:
 #+begin_src emacs-lisp
   (use-package geiser
     :straight t
@@ -850,6 +724,9 @@ Captured on: %U |
 
 #+RESULTS:
 *** SLIME
+:PROPERTIES:
+:ID:       C35698EC-8BB5-4E5B-8029-F60356BCDB98
+:END:
 #+begin_src emacs-lisp
   (use-package slime
     :straight t
@@ -859,6 +736,9 @@ Captured on: %U |
 
 #+RESULTS:
 ** Eglot
+:PROPERTIES:
+:ID:       E9986D3F-1403-4ACA-8831-159BFC28B229
+:END:
 #+begin_src emacs-lisp
   (use-package eglot
     :straight (:type built-in)
@@ -867,11 +747,15 @@ Captured on: %U |
 
 #+RESULTS:
 | eglot-ensure | eglot | evil-collection-python-set-evil-shift-width |
-* Treemacs
+** sql-indent
+:PROPERTIES:
+:ID:       8A3EC1DD-7AF5-4307-B5CD-C757641AFED1
+:END:
 #+begin_src emacs-lisp
-  (use-package treemacs
-    :straight t)
+  (use-package sql-indent
+    :straight t
+    :hook (sql-mode . sqlind-minor-mode))
 #+end_src
 
 #+RESULTS:
-
+| sqlind-minor-mode | sql-indent-mode | sql-indent-enable |
